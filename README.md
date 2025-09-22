@@ -1,22 +1,20 @@
 # Better Auth Convex
 
-True local installation of Better Auth in your Convex app schema, eliminating component isolation and `ctx.runQuery`/`ctx.runMutation` overhead.
+Local installation of Better Auth directly in your Convex app schema, with direct database access instead of component-based queries.
 
 ## Why Better Auth Convex?
 
-The official `@convex-dev/better-auth` component stores auth tables in an isolated component schema. While the docs mention ["local install"](https://convex-better-auth.netlify.app/local-install), it's still component-isolated, not truly local to your app.
+The official `@convex-dev/better-auth` component stores auth tables in a component schema. This package provides an alternative approach with direct schema integration.
 
-**This package provides actual local installation:**
+**This package provides direct local installation:**
 
-1. **Auth tables live in YOUR app schema** - Not in a component boundary
+1. **Auth tables live in your app schema** - Not in a component boundary
 2. **Direct database access** - No `ctx.runQuery`/`ctx.runMutation` overhead (>50ms latency that increases with app size)
 3. **Unified context** - Auth triggers can directly access and modify your app tables transactionally
 4. **Full TypeScript inference** - Single schema, single source of truth
 
 > [!WARNING]
-> BREAKING CHANGE from @convex-dev/better-auth
->
-> Auth tables are stored in your app schema instead of the component schema. If you're already in production with `@convex-dev/better-auth`, you'll need to write a migration script to move your auth data.
+> BREAKING CHANGE: Auth tables are stored in your app schema instead of the component schema. If you're already in production with `@convex-dev/better-auth`, you'll need to write a migration script to move your auth data.
 
 ## Prerequisites
 
@@ -56,7 +54,7 @@ import schema from './schema'; // YOUR app schema with auth tables
 // 1. Internal API functions for auth operations
 const authFunctions: AuthFunctions = internal.auth;
 
-// 2. Auth client with triggers that run in YOUR app context
+// 2. Auth client with triggers that run in your app context
 export const authClient = createClient<DataModel, typeof schema>({
   authFunctions,
   schema,
@@ -167,7 +165,7 @@ export default http;
 // ✅ In queries/mutations: Use getAuth (direct DB access)
 export const someQuery = query({
   handler: async (ctx) => {
-    const auth = getAuth(ctx); // No ctx.runQuery overhead!
+    const auth = getAuth(ctx); // Direct DB access
     const user = await auth.api.getUser({ userId });
   },
 });
@@ -185,15 +183,15 @@ export const someAction = action({
 
 ```ts
 // Component approach (@convex-dev/better-auth):
-// ❌ Auth tables in components.betterAuth schema (isolated)
-// ❌ Can't join auth tables with app tables
-// ❌ ctx.runQuery/runMutation overhead (>50ms)
+// - Auth tables in components.betterAuth schema
+// - Requires ctx.runQuery/runMutation for auth operations
+// - Component boundaries between auth and app tables
 
 // Local approach (better-auth-convex):
-// ✅ Auth tables in YOUR app schema
+// ✅ Auth tables in your app schema
 // ✅ Direct queries across auth + app tables
 // ✅ Single transaction for complex operations
-// ✅ No component overhead
+// ✅ Direct function calls
 ```
 
 ### Helper Functions
