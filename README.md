@@ -13,11 +13,10 @@ The official `@convex-dev/better-auth` component stores auth tables in an isolat
 3. **Unified context** - Auth triggers can directly access and modify your app tables transactionally
 4. **Full TypeScript inference** - Single schema, single source of truth
 
-<Callout type="warning">
-**⚠️ BREAKING CHANGE from @convex-dev/better-auth**
-
-Auth tables are stored in your app schema instead of the component schema. If you're already in production with `@convex-dev/better-auth`, you'll need to write a migration script to move your auth data.
-</Callout>
+> [!WARNING]
+> BREAKING CHANGE from @convex-dev/better-auth
+>
+> Auth tables are stored in your app schema instead of the component schema. If you're already in production with `@convex-dev/better-auth`, you'll need to write a migration script to move your auth data.
 
 ## Prerequisites
 
