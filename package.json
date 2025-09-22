@@ -39,6 +39,7 @@
     "build:watch": "tsup:watch",
     "lint": "pnpm eslint",
     "lint:fix": "pnpm eslint --fix && pnpm prettier --write .",
+    "release": "pnpm build && pnpm changeset publish",
     "typecheck": "pnpm tsc --noEmit",
     "typecheck:watch": "pnpm tsc --noEmit --watch"
   },
