@@ -1,8 +1,7 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@1.6.0/schema.json",
-  "changelog": ["./changelog-config", { "repo": "udecode/jotai-x" }],
+  "changelog": ["./changelog-config", { "repo": "udecode/better-auth-convex" }],
   "commit": false,
-  "linked": [["jotai-x"]],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
