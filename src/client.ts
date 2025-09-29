@@ -26,6 +26,9 @@ export type AuthFunctions = {
   onCreate: FunctionReference<'mutation', 'internal', Record<string, any>>;
   onDelete: FunctionReference<'mutation', 'internal', Record<string, any>>;
   onUpdate: FunctionReference<'mutation', 'internal', Record<string, any>>;
+  beforeCreate?: FunctionReference<'mutation', 'internal', Record<string, any>>;
+  beforeDelete?: FunctionReference<'mutation', 'internal', Record<string, any>>;
+  beforeUpdate?: FunctionReference<'mutation', 'internal', Record<string, any>>;
 };
 
 export type Triggers<
@@ -33,6 +36,22 @@ export type Triggers<
   Schema extends SchemaDefinition<any, any>,
 > = {
   [K in keyof Schema['tables'] & string]?: {
+    beforeCreate?: (
+      ctx: GenericMutationCtx<DataModel>,
+      data: Infer<Schema['tables'][K]['validator']>
+    ) => Promise<Infer<Schema['tables'][K]['validator']> | void>;
+    beforeDelete?: (
+      ctx: GenericMutationCtx<DataModel>,
+      doc: Infer<Schema['tables'][K]['validator']> & IdField<K> & SystemFields
+    ) => Promise<
+      | (Infer<Schema['tables'][K]['validator']> & IdField<K> & SystemFields)
+      | void
+    >;
+    beforeUpdate?: (
+      ctx: GenericMutationCtx<DataModel>,
+      doc: Infer<Schema['tables'][K]['validator']> & IdField<K> & SystemFields,
+      update: Partial<Infer<Schema['tables'][K]['validator']>>
+    ) => Promise<Partial<Infer<Schema['tables'][K]['validator']>> | void>;
     onCreate?: (
       ctx: GenericMutationCtx<DataModel>,
       doc: Infer<Schema['tables'][K]['validator']> & IdField<K> & SystemFields
@@ -69,6 +88,50 @@ export const createClient = <
       dbAdapter(ctx, options, config),
     httpAdapter: (ctx: GenericCtx<DataModel>) => httpAdapter(ctx, config),
     triggersApi: () => ({
+      beforeCreate: internalMutationGeneric({
+        args: {
+          data: v.any(),
+          model: v.string(),
+        },
+        handler: async (ctx, args) => {
+          return (
+            (await config?.triggers?.[args.model]?.beforeCreate?.(
+              ctx,
+              args.data
+            )) ?? args.data
+          );
+        },
+      }),
+      beforeDelete: internalMutationGeneric({
+        args: {
+          doc: v.any(),
+          model: v.string(),
+        },
+        handler: async (ctx, args) => {
+          return (
+            (await config?.triggers?.[args.model]?.beforeDelete?.(
+              ctx,
+              args.doc
+            )) ?? args.doc
+          );
+        },
+      }),
+      beforeUpdate: internalMutationGeneric({
+        args: {
+          doc: v.any(),
+          model: v.string(),
+          update: v.any(),
+        },
+        handler: async (ctx, args) => {
+          return (
+            (await config?.triggers?.[args.model]?.beforeUpdate?.(
+              ctx,
+              args.doc,
+              args.update
+            )) ?? args.update
+          );
+        },
+      }),
       onCreate: internalMutationGeneric({
         args: {
           doc: v.any(),
