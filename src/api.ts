@@ -68,13 +68,14 @@ export const createHandler = async (
     beforeCreateHandle?: string;
     select?: string[];
     onCreateHandle?: string;
+    skipBeforeHooks?: boolean;
   },
   schema: Schema,
   betterAuthSchema: any
 ) => {
   let data = args.input.data;
 
-  if (args.beforeCreateHandle) {
+  if (!args.skipBeforeHooks && args.beforeCreateHandle) {
     const transformedData = await ctx.runMutation(
       args.beforeCreateHandle as FunctionHandle<'mutation'>,
       {
@@ -300,6 +301,7 @@ export const deleteOneHandler = async (
     };
     beforeDeleteHandle?: string;
     onDeleteHandle?: string;
+    skipBeforeHooks?: boolean;
   },
   schema: Schema,
   betterAuthSchema: any
@@ -312,7 +314,7 @@ export const deleteOneHandler = async (
 
   let hookDoc = doc;
 
-  if (args.beforeDeleteHandle) {
+  if (!args.skipBeforeHooks && args.beforeDeleteHandle) {
     const transformedDoc = await ctx.runMutation(
       args.beforeDeleteHandle as FunctionHandle<'mutation'>,
       {
@@ -348,6 +350,7 @@ export const deleteManyHandler = async (
     paginationOpts: any;
     beforeDeleteHandle?: string;
     onDeleteHandle?: string;
+    skipBeforeHooks?: boolean;
   },
   schema: Schema,
   betterAuthSchema: any
@@ -359,7 +362,7 @@ export const deleteManyHandler = async (
   await asyncMap(page, async (doc: any) => {
     let hookDoc = doc;
 
-    if (args.beforeDeleteHandle) {
+    if (!args.skipBeforeHooks && args.beforeDeleteHandle) {
       const transformedDoc = await ctx.runMutation(
         args.beforeDeleteHandle as FunctionHandle<'mutation'>,
         {
@@ -401,12 +404,14 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
       args: {
         beforeCreateHandle: v.optional(v.string()),
         input: v.union(
-          ...Object.entries(schema.tables).map(([model, table]) =>
-            v.object({
-              data: v.object((table as any).validator.fields),
+          ...Object.entries(schema.tables).map(([model, table]) => {
+            const fields = partial((table as any).validator.fields);
+
+            return v.object({
+              data: v.object(fields),
               model: v.literal(model),
-            })
-          )
+            });
+          })
         ),
         select: v.optional(v.array(v.string())),
         onCreateHandle: v.optional(v.string()),
