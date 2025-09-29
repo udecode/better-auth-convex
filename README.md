@@ -60,6 +60,18 @@ export const authClient = createClient<DataModel, typeof schema>({
   schema,
   triggers: {
     user: {
+      beforeCreate: async (_ctx, data) => {
+        // Ensure every user has a username, filling in a simple fallback
+        const username =
+          data.username?.trim() ||
+          data.email?.split('@')[0] ||
+          `user-${Date.now()}`;
+
+        return {
+          ...data,
+          username,
+        };
+      },
       onCreate: async (ctx, user) => {
         // Direct access to your database
         // Example: Create personal organization
@@ -73,6 +85,14 @@ export const authClient = createClient<DataModel, typeof schema>({
         await ctx.db.patch(user._id, {
           personalOrganizationId: orgId,
         });
+      },
+      beforeDelete: async (ctx, user) => {
+        // Example: clean up custom tables before removing the user
+        if (user.personalOrganizationId) {
+          await ctx.db.delete(user.personalOrganizationId);
+        }
+
+        return user;
       },
     },
     session: {
@@ -130,7 +150,14 @@ export const getAuth = <Ctx extends QueryCtx | MutationCtx>(ctx: Ctx) => {
 };
 
 // 6. Export trigger handlers for Convex
-export const { onCreate, onDelete, onUpdate } = authClient.triggersApi();
+export const {
+  beforeCreate,
+  beforeDelete,
+  beforeUpdate,
+  onCreate,
+  onDelete,
+  onUpdate,
+} = authClient.triggersApi();
 
 // 7. Export API functions for internal use
 export const {
@@ -143,6 +170,8 @@ export const {
   updateOne,
 } = createApi(schema, auth.options);
 ```
+
+The trigger API exposes both `before*` and `on*` hooks. The `before` variants run inside the same Convex transaction just ahead of the database write, letting you normalize input, enforce invariants, or perform cleanup and return any transformed payload that should be persisted.
 
 ```ts
 // convex/http.ts
