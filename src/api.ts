@@ -65,20 +65,37 @@ export const createHandler = async (
       data: any;
       model: string;
     };
+    beforeCreateHandle?: string;
     select?: string[];
     onCreateHandle?: string;
   },
   schema: Schema,
   betterAuthSchema: any
 ) => {
+  let data = args.input.data;
+
+  if (args.beforeCreateHandle) {
+    const transformedData = await ctx.runMutation(
+      args.beforeCreateHandle as FunctionHandle<'mutation'>,
+      {
+        data,
+        model: args.input.model,
+      }
+    );
+
+    if (transformedData !== undefined) {
+      data = transformedData;
+    }
+  }
+
   await checkUniqueFields(
     ctx,
     schema,
     betterAuthSchema,
     args.input.model,
-    args.input.data
+    data
   );
-  const id = await ctx.db.insert(args.input.model as any, args.input.data);
+  const id = await ctx.db.insert(args.input.model as any, data);
   const doc = await ctx.db.get(id);
 
   if (!doc) {
@@ -137,6 +154,7 @@ export const updateOneHandler = async (
       update: any;
       where?: any[];
     };
+    beforeUpdateHandle?: string;
     onUpdateHandle?: string;
   },
   schema: Schema,
@@ -148,15 +166,32 @@ export const updateOneHandler = async (
     throw new Error(`Failed to update ${args.input.model}`);
   }
 
+  let update = args.input.update;
+
+  if (args.beforeUpdateHandle) {
+    const transformedUpdate = await ctx.runMutation(
+      args.beforeUpdateHandle as FunctionHandle<'mutation'>,
+      {
+        doc,
+        model: args.input.model,
+        update,
+      }
+    );
+
+    if (transformedUpdate !== undefined) {
+      update = transformedUpdate;
+    }
+  }
+
   await checkUniqueFields(
     ctx,
     schema,
     betterAuthSchema,
     args.input.model,
-    args.input.update,
+    update,
     doc
   );
-  await ctx.db.patch(doc._id as GenericId<string>, args.input.update as any);
+  await ctx.db.patch(doc._id as GenericId<string>, update as any);
   const updatedDoc = await ctx.db.get(doc._id as GenericId<string>);
 
   if (!updatedDoc) {
@@ -182,6 +217,7 @@ export const updateManyHandler = async (
       where?: any[];
     };
     paginationOpts: any;
+    beforeUpdateHandle?: string;
     onUpdateHandle?: string;
   },
   schema: Schema,
@@ -207,25 +243,40 @@ export const updateManyHandler = async (
     }
 
     await asyncMap(page, async (doc: any) => {
+      let update = args.input.update;
+
+      if (args.beforeUpdateHandle) {
+        const transformedUpdate = await ctx.runMutation(
+          args.beforeUpdateHandle as FunctionHandle<'mutation'>,
+          {
+            doc,
+            model: args.input.model,
+            update,
+          }
+        );
+
+        if (transformedUpdate !== undefined) {
+          update = transformedUpdate;
+        }
+      }
+
       await checkUniqueFields(
         ctx,
         schema,
         betterAuthSchema,
         args.input.model,
-        args.input.update ?? {},
+        update ?? {},
         doc
       );
-      await ctx.db.patch(
-        doc._id as GenericId<string>,
-        args.input.update as any
-      );
+      await ctx.db.patch(doc._id as GenericId<string>, update as any);
 
       if (args.onUpdateHandle) {
+        const newDoc = await ctx.db.get(doc._id as GenericId<string>);
         await ctx.runMutation(
           args.onUpdateHandle as FunctionHandle<'mutation'>,
           {
             model: args.input.model,
-            newDoc: await ctx.db.get(doc._id as GenericId<string>),
+            newDoc,
             oldDoc: doc,
           }
         );
@@ -247,6 +298,7 @@ export const deleteOneHandler = async (
       model: string;
       where?: any[];
     };
+    beforeDeleteHandle?: string;
     onDeleteHandle?: string;
   },
   schema: Schema,
@@ -258,16 +310,32 @@ export const deleteOneHandler = async (
     return;
   }
 
+  let hookDoc = doc;
+
+  if (args.beforeDeleteHandle) {
+    const transformedDoc = await ctx.runMutation(
+      args.beforeDeleteHandle as FunctionHandle<'mutation'>,
+      {
+        doc,
+        model: args.input.model,
+      }
+    );
+
+    if (transformedDoc !== undefined) {
+      hookDoc = transformedDoc;
+    }
+  }
+
   await ctx.db.delete(doc._id as GenericId<string>);
 
   if (args.onDeleteHandle) {
     await ctx.runMutation(args.onDeleteHandle as FunctionHandle<'mutation'>, {
-      doc,
+      doc: hookDoc,
       model: args.input.model,
     });
   }
 
-  return doc;
+  return hookDoc;
 };
 
 export const deleteManyHandler = async (
@@ -278,6 +346,7 @@ export const deleteManyHandler = async (
       where?: any[];
     };
     paginationOpts: any;
+    beforeDeleteHandle?: string;
     onDeleteHandle?: string;
   },
   schema: Schema,
@@ -288,14 +357,30 @@ export const deleteManyHandler = async (
     paginationOpts: args.paginationOpts,
   });
   await asyncMap(page, async (doc: any) => {
-    if (args.onDeleteHandle) {
-      await ctx.runMutation(args.onDeleteHandle as FunctionHandle<'mutation'>, {
-        doc,
-        model: args.input.model,
-      });
+    let hookDoc = doc;
+
+    if (args.beforeDeleteHandle) {
+      const transformedDoc = await ctx.runMutation(
+        args.beforeDeleteHandle as FunctionHandle<'mutation'>,
+        {
+          doc,
+          model: args.input.model,
+        }
+      );
+
+      if (transformedDoc !== undefined) {
+        hookDoc = transformedDoc;
+      }
     }
 
     await ctx.db.delete(doc._id as GenericId<string>);
+
+    if (args.onDeleteHandle) {
+      await ctx.runMutation(args.onDeleteHandle as FunctionHandle<'mutation'>, {
+        doc: hookDoc,
+        model: args.input.model,
+      });
+    }
   });
 
   return {
@@ -314,6 +399,7 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
   return {
     create: internalMutationGeneric({
       args: {
+        beforeCreateHandle: v.optional(v.string()),
         input: v.union(
           ...Object.entries(schema.tables).map(([model, table]) =>
             v.object({
@@ -330,6 +416,7 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
     }),
     deleteMany: internalMutationGeneric({
       args: {
+        beforeDeleteHandle: v.optional(v.string()),
         input: v.union(
           ...Object.keys(schema.tables).map((tableName) => {
             return v.object({
@@ -350,6 +437,7 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
     }),
     deleteOne: internalMutationGeneric({
       args: {
+        beforeDeleteHandle: v.optional(v.string()),
         input: v.union(
           ...Object.keys(schema.tables).map((tableName) => {
             return v.object({
@@ -399,6 +487,7 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
     }),
     updateMany: internalMutationGeneric({
       args: {
+        beforeUpdateHandle: v.optional(v.string()),
         input: v.union(
           ...Object.entries(schema.tables).map(
             ([tableName, table]: [string, Schema['tables'][string]]) => {
@@ -420,6 +509,7 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
     }),
     updateOne: internalMutationGeneric({
       args: {
+        beforeUpdateHandle: v.optional(v.string()),
         input: v.union(
           ...Object.entries(schema.tables).map(
             ([tableName, table]: [string, Schema['tables'][string]]) => {
