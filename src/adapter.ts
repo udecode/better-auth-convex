@@ -196,8 +196,15 @@ export const httpAdapter = <
                   authFunctions.onCreate
                 )) as FunctionHandle<'mutation'>)
               : undefined;
+          const beforeCreateHandle =
+            authFunctions.beforeCreate && triggers?.[model]?.beforeCreate
+              ? ((await createFunctionHandle(
+                  authFunctions.beforeCreate
+                )) as FunctionHandle<'mutation'>)
+              : undefined;
 
           return ctx.runMutation(authFunctions.create, {
+            beforeCreateHandle: beforeCreateHandle,
             input: { data, model },
             select,
             onCreateHandle: onCreateHandle,
@@ -214,7 +221,14 @@ export const httpAdapter = <
                   authFunctions.onDelete
                 )) as FunctionHandle<'mutation'>)
               : undefined;
+          const beforeDeleteHandle =
+            authFunctions.beforeDelete && triggers?.[data.model]?.beforeDelete
+              ? ((await createFunctionHandle(
+                  authFunctions.beforeDelete
+                )) as FunctionHandle<'mutation'>)
+              : undefined;
           await ctx.runMutation(authFunctions.deleteOne, {
+            beforeDeleteHandle: beforeDeleteHandle,
             input: {
               model: data.model,
               where: parseWhere(data.where),
@@ -233,8 +247,15 @@ export const httpAdapter = <
                   authFunctions.onDelete
                 )) as FunctionHandle<'mutation'>)
               : undefined;
+          const beforeDeleteHandle =
+            authFunctions.beforeDelete && triggers?.[data.model]?.beforeDelete
+              ? ((await createFunctionHandle(
+                  authFunctions.beforeDelete
+                )) as FunctionHandle<'mutation'>)
+              : undefined;
           const result = await handlePagination(async ({ paginationOpts }) => {
             return await ctx.runMutation(authFunctions.deleteMany, {
+              beforeDeleteHandle: beforeDeleteHandle,
               input: {
                 ...data,
                 where: parseWhere(data.where),
@@ -297,8 +318,15 @@ export const httpAdapter = <
                     authFunctions.onUpdate
                   )) as FunctionHandle<'mutation'>)
                 : undefined;
+            const beforeUpdateHandle =
+              authFunctions.beforeUpdate && triggers?.[data.model]?.beforeUpdate
+                ? ((await createFunctionHandle(
+                    authFunctions.beforeUpdate
+                  )) as FunctionHandle<'mutation'>)
+                : undefined;
 
             return ctx.runMutation(authFunctions.updateOne, {
+              beforeUpdateHandle: beforeUpdateHandle,
               input: {
                 model: data.model as any,
                 update: data.update as any,
@@ -321,9 +349,16 @@ export const httpAdapter = <
                   authFunctions.onUpdate
                 )) as FunctionHandle<'mutation'>)
               : undefined;
+          const beforeUpdateHandle =
+            authFunctions.beforeUpdate && triggers?.[data.model]?.beforeUpdate
+              ? ((await createFunctionHandle(
+                  authFunctions.beforeUpdate
+                )) as FunctionHandle<'mutation'>)
+              : undefined;
 
           const result = await handlePagination(async ({ paginationOpts }) => {
             return await ctx.runMutation(authFunctions.updateMany, {
+              beforeUpdateHandle: beforeUpdateHandle,
               input: {
                 ...(data as any),
                 where: parseWhere(data.where),
@@ -398,10 +433,17 @@ export const dbAdapter = <
                   authFunctions.onCreate
                 )) as FunctionHandle<'mutation'>)
               : undefined;
+          const beforeCreateHandle =
+            authFunctions.beforeCreate && triggers?.[model]?.beforeCreate
+              ? ((await createFunctionHandle(
+                  authFunctions.beforeCreate
+                )) as FunctionHandle<'mutation'>)
+              : undefined;
 
           return createHandler(
             ctx,
             {
+              beforeCreateHandle: beforeCreateHandle,
               input: { data, model },
               select,
               onCreateHandle: onCreateHandle,
@@ -417,10 +459,17 @@ export const dbAdapter = <
                   authFunctions.onDelete
                 )) as FunctionHandle<'mutation'>)
               : undefined;
+          const beforeDeleteHandle =
+            authFunctions.beforeDelete && triggers?.[data.model]?.beforeDelete
+              ? ((await createFunctionHandle(
+                  authFunctions.beforeDelete
+                )) as FunctionHandle<'mutation'>)
+              : undefined;
 
           await deleteOneHandler(
             ctx,
             {
+              beforeDeleteHandle: beforeDeleteHandle,
               input: {
                 model: data.model,
                 where: parseWhere(data.where),
@@ -438,11 +487,18 @@ export const dbAdapter = <
                   authFunctions.onDelete
                 )) as FunctionHandle<'mutation'>)
               : undefined;
+          const beforeDeleteHandle =
+            authFunctions.beforeDelete && triggers?.[data.model]?.beforeDelete
+              ? ((await createFunctionHandle(
+                  authFunctions.beforeDelete
+                )) as FunctionHandle<'mutation'>)
+              : undefined;
 
           const result = await handlePagination(async ({ paginationOpts }) => {
             return await deleteManyHandler(
               ctx,
               {
+                beforeDeleteHandle: beforeDeleteHandle,
                 input: {
                   ...data,
                   where: parseWhere(data.where),
@@ -520,10 +576,17 @@ export const dbAdapter = <
                     authFunctions.onUpdate
                   )) as FunctionHandle<'mutation'>)
                 : undefined;
+            const beforeUpdateHandle =
+              authFunctions.beforeUpdate && triggers?.[data.model]?.beforeUpdate
+                ? ((await createFunctionHandle(
+                    authFunctions.beforeUpdate
+                  )) as FunctionHandle<'mutation'>)
+                : undefined;
 
             return updateOneHandler(
               ctx,
               {
+                beforeUpdateHandle: beforeUpdateHandle,
                 input: {
                   model: data.model as any,
                   update: data.update as any,
@@ -545,11 +608,18 @@ export const dbAdapter = <
                   authFunctions.onUpdate
                 )) as FunctionHandle<'mutation'>)
               : undefined;
+          const beforeUpdateHandle =
+            authFunctions.beforeUpdate && triggers?.[data.model]?.beforeUpdate
+              ? ((await createFunctionHandle(
+                  authFunctions.beforeUpdate
+                )) as FunctionHandle<'mutation'>)
+              : undefined;
 
           const result = await handlePagination(async ({ paginationOpts }) => {
             return await updateManyHandler(
               ctx,
               {
+                beforeUpdateHandle: beforeUpdateHandle,
                 input: {
                   ...(data as any),
                   where: parseWhere(data.where),
