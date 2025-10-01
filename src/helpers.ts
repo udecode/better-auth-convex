@@ -17,34 +17,36 @@ export const getAuthUserId = async <DataModel extends GenericDataModel>(
 };
 
 export const getSession = async <DataModel extends GenericDataModel>(
-  ctx: GenericQueryCtx<DataModel>
+  ctx: GenericQueryCtx<DataModel>,
+  userId?: DocumentByName<DataModel, 'user'>['_id']
 ) => {
-  const userId = await getAuthUserId(ctx);
+  const resolvedUserId = userId ?? (await getAuthUserId(ctx));
 
-  if (!userId) {
+  if (!resolvedUserId) {
     return null;
   }
 
   return (await ctx.db
     .query('session' as any)
-    .withIndex('userId', (q) => q.eq('userId', userId as any))
+    .withIndex('userId', (q) => q.eq('userId', resolvedUserId as any))
     .order('desc')
     .first()) as DocumentByName<DataModel, 'session'> | null;
 };
 
 export const getHeaders = async <DataModel extends GenericDataModel>(
-  ctx: GenericQueryCtx<DataModel>
+  ctx: GenericQueryCtx<DataModel>,
+  session?: DocumentByName<DataModel, 'session'> | null
 ) => {
-  const session = await getSession(ctx);
+  const resolvedSession = session ?? (await getSession(ctx));
 
-  if (!session) {
+  if (!resolvedSession) {
     return new Headers();
   }
 
   return new Headers({
-    ...(session?.token ? { authorization: `Bearer ${session.token}` } : {}),
-    ...(session?.ipAddress
-      ? { 'x-forwarded-for': session.ipAddress as string }
+    ...(resolvedSession?.token ? { authorization: `Bearer ${resolvedSession.token}` } : {}),
+    ...(resolvedSession?.ipAddress
+      ? { 'x-forwarded-for': resolvedSession.ipAddress as string }
       : {}),
   });
 };
