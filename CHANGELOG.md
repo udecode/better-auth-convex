@@ -1,5 +1,12 @@
 # better-auth-convex
 
+## 0.3.0
+
+### Minor Changes
+
+- 23ec28b: - Fix `sortBy` direction handling in query generation - now correctly applies ascending order when specified
+  - fix: use jwt session id for `getSession`, `getHeaders` state
+
 ## 0.2.2
 
 ### Patch Changes
