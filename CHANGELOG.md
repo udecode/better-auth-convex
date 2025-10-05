@@ -1,5 +1,11 @@
 # better-auth-convex
 
+## 0.3.1
+
+### Patch Changes
+
+- 28facf6: Add `getAuthUserIdentity` helper and improve type safety for session IDs
+
 ## 0.3.0
 
 ### Minor Changes
