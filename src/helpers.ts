@@ -4,7 +4,7 @@ import type {
   GenericQueryCtx,
 } from 'convex/server';
 
-export const getAuthUserId = async <DataModel extends GenericDataModel>(
+export const getAuthUserIdentity = async <DataModel extends GenericDataModel>(
   ctx: GenericQueryCtx<DataModel>
 ) => {
   const identity = await ctx.auth.getUserIdentity();
@@ -13,23 +13,42 @@ export const getAuthUserId = async <DataModel extends GenericDataModel>(
     return null;
   }
 
-  return identity.subject as DocumentByName<DataModel, 'user'>['_id'];
+  return {
+    ...identity,
+    sessionId: identity.sessionId as DocumentByName<
+      DataModel,
+      'session'
+    >['_id'],
+    userId: identity.subject as DocumentByName<DataModel, 'user'>['_id'],
+  };
+};
+
+export const getAuthUserId = async <DataModel extends GenericDataModel>(
+  ctx: GenericQueryCtx<DataModel>
+) => {
+  const identity = await getAuthUserIdentity(ctx);
+
+  if (!identity) {
+    return null;
+  }
+
+  return identity.subject;
 };
 
 export const getSession = async <DataModel extends GenericDataModel>(
   ctx: GenericQueryCtx<DataModel>,
-  _sessionId?: any
+  _sessionId?: DocumentByName<DataModel, 'session'>['_id']
 ) => {
-  let sessionId = _sessionId;
+  let sessionId: any = _sessionId;
 
   if (!sessionId) {
-    const identity = await ctx.auth.getUserIdentity();
+    const identity = await getAuthUserIdentity(ctx);
 
     if (!identity) {
       return null;
     }
 
-    sessionId = identity.sessionId as any;
+    sessionId = identity.sessionId;
   }
 
   return (await ctx.db.get(sessionId)) as DocumentByName<
