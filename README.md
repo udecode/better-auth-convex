@@ -29,7 +29,7 @@ The official `@convex-dev/better-auth` component stores auth tables in a compone
 ## Installation
 
 ```bash
-pnpm add better-auth@1.3.13 better-auth-convex
+pnpm add better-auth@1.3.27 better-auth-convex
 ```
 
 ## Local Setup
