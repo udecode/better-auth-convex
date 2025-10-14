@@ -131,7 +131,7 @@ const findIndex = (
         ['eq', 'gt', 'gte', 'in', 'lt', 'lte', 'not_in'].includes(
           w.operator
         )) &&
-      w.field !== 'id'
+      w.field !== '_id'
     );
   });
 
@@ -526,7 +526,7 @@ export const paginate = async <
   if (
     args.where?.some(
       (w) =>
-        w.field === 'id' &&
+        w.field === '_id' &&
         w.operator &&
         !['eq', 'in', 'ne', 'not_in'].includes(w.operator)
     )
@@ -542,7 +542,8 @@ export const paginate = async <
   const uniqueWhere = args.where?.find(
     (w) =>
       (!w.operator || w.operator === 'eq') &&
-      (isUniqueField(betterAuthSchema, args.model, w.field) || w.field === 'id')
+      (isUniqueField(betterAuthSchema, args.model, w.field) ||
+        w.field === '_id')
   );
 
   if (uniqueWhere) {
@@ -552,7 +553,7 @@ export const paginate = async <
         where: [uniqueWhere],
       }) || {};
     const doc =
-      uniqueWhere.field === 'id'
+      uniqueWhere.field === '_id'
         ? await ctx.db.get(uniqueWhere.value as GenericId<T>)
         : await ctx.db
             .query(args.model as any)
@@ -595,7 +596,7 @@ export const paginate = async <
       throw new TypeError('in clause value must be an array');
     }
     // For ids, just use asyncMap + .get()
-    if (inWhere.field === 'id') {
+    if (inWhere.field === '_id') {
       const docs = await asyncMap(inWhere.value as any[], async (value) => {
         return ctx.db.get(value as GenericId<T>);
       });

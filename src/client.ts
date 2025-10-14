@@ -159,8 +159,8 @@ export const createClient = <
         handler: async (ctx, args) => {
           await config?.triggers?.[args.model]?.onUpdate?.(
             ctx,
-            args.oldDoc,
-            args.newDoc
+            args.newDoc,
+            args.oldDoc
           );
         },
       }),

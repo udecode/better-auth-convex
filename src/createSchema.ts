@@ -5,18 +5,10 @@ import type { BetterAuthDbSchema, FieldAttribute } from 'better-auth/db';
 // all fields in the schema specialFields are automatically indexed
 export const indexFields = {
   account: ['accountId', ['accountId', 'providerId'], ['providerId', 'userId']],
-  apikey: ['key'],
-  invitation: [
-    ['email', 'organizationId', 'status'],
-    ['organizationId', 'status'],
-  ],
-  member: [['organizationId', 'userId']],
   oauthConsent: [['clientId', 'userId']],
   passkey: ['credentialID'],
   rateLimit: ['key'],
   session: ['expiresAt', ['expiresAt', 'userId']],
-  ssoProvider: ['organizationId', 'domain'],
-  subscription: ['stripeSubscriptionId', 'stripeCustomerId', 'referenceId'],
   user: [['email', 'name'], 'name', 'userId'],
   verification: ['expiresAt', 'identifier'],
 };
