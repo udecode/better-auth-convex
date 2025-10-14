@@ -30,7 +30,7 @@ const whereValidator = (schema: Schema, tableName: keyof Schema['tables']) =>
       ...Object.keys(schema.tables[tableName].validator.fields).map((field) =>
         v.literal(field)
       ),
-      v.literal('id')
+      v.literal('_id')
     ),
     operator: v.optional(
       v.union(
@@ -67,8 +67,8 @@ export const createHandler = async (
     };
     beforeCreateHandle?: string;
     select?: string[];
-    onCreateHandle?: string;
     skipBeforeHooks?: boolean;
+    onCreateHandle?: string;
   },
   schema: Schema,
   betterAuthSchema: any
@@ -300,8 +300,8 @@ export const deleteOneHandler = async (
       where?: any[];
     };
     beforeDeleteHandle?: string;
-    onDeleteHandle?: string;
     skipBeforeHooks?: boolean;
+    onDeleteHandle?: string;
   },
   schema: Schema,
   betterAuthSchema: any
@@ -349,8 +349,8 @@ export const deleteManyHandler = async (
     };
     paginationOpts: any;
     beforeDeleteHandle?: string;
-    onDeleteHandle?: string;
     skipBeforeHooks?: boolean;
+    onDeleteHandle?: string;
   },
   schema: Schema,
   betterAuthSchema: any

@@ -1,6 +1,5 @@
 import type { betterAuth } from 'better-auth';
 
-import { requireEnv } from '@convex-dev/better-auth/utils';
 import { corsRouter } from 'convex-helpers/server/cors';
 import { type HttpRouter, httpActionGeneric } from 'convex/server';
 
@@ -54,7 +53,7 @@ export const registerRoutes = (
     // Redirect root well-known to api well-known
     http.route({
       handler: httpActionGeneric(async () => {
-        const url = `${requireEnv('CONVEX_SITE_URL')}${path}/convex/.well-known/openid-configuration`;
+        const url = `${process.env.CONVEX_SITE_URL}${path}/convex/.well-known/openid-configuration`;
 
         return Response.redirect(url);
       }),
@@ -88,9 +87,12 @@ export const registerRoutes = (
     | undefined;
   const cors = corsRouter(http, {
     allowCredentials: true,
-    allowedHeaders: ['Content-Type', 'Better-Auth-Cookie'].concat(
-      corsOpts.allowedHeaders ?? []
-    ),
+
+    allowedHeaders: [
+      'Content-Type',
+      'Better-Auth-Cookie',
+      'Authorization',
+    ].concat(corsOpts.allowedHeaders ?? []),
     debug: opts?.verbose,
     enforceAllowOrigins: false,
     exposedHeaders: ['Set-Better-Auth-Cookie'].concat(
@@ -103,7 +105,7 @@ export const registerRoutes = (
         [];
       const trustedOrigins = Array.isArray(trustedOriginsOption)
         ? trustedOriginsOption
-        : await trustedOriginsOption(request);
+        : ((await trustedOriginsOption?.(request)) ?? []);
 
       return trustedOrigins
         .map((origin) =>

@@ -1,13 +1,15 @@
 import type { GenericCtx } from '@convex-dev/better-auth';
-import type { BetterAuthOptions, Prettify, Where } from 'better-auth';
+import type { BetterAuthOptions, Where } from 'better-auth';
 import type { SetOptional } from 'type-fest';
 
+import { isRunMutationCtx } from '@convex-dev/better-auth/utils';
 import {
-  type AdapterDebugLogs,
   type AdapterFactoryOptions,
+  type DBAdapterDebugLogOption,
   createAdapterFactory,
 } from 'better-auth/adapters';
 import { getAuthTables } from 'better-auth/db';
+import { asyncMap } from 'convex-helpers';
 import {
   type FunctionHandle,
   type GenericDataModel,
@@ -16,6 +18,7 @@ import {
   type SchemaDefinition,
   createFunctionHandle,
 } from 'convex/server';
+import { prop, sortBy, unique } from 'remeda';
 
 import type { AuthFunctions, Triggers } from './client';
 
@@ -28,9 +31,6 @@ import {
   updateManyHandler,
   updateOneHandler,
 } from './api';
-import { createSchema } from './createSchema';
-
-type CleanedWhere = Prettify<Required<Where>>;
 
 export const handlePagination = async (
   next: ({
@@ -96,11 +96,11 @@ export const handlePagination = async (
   return state;
 };
 
-export type ConvexCleanedWhere = CleanedWhere & {
+export type ConvexCleanedWhere = Where & {
   value: number[] | string[] | boolean | number | string | null;
 };
 
-export const parseWhere = (where?: CleanedWhere[]): ConvexCleanedWhere[] => {
+export const parseWhere = (where?: Where[]): ConvexCleanedWhere[] => {
   return where?.map((where) => {
     if (where.value instanceof Date) {
       return {
@@ -118,10 +118,14 @@ export const adapterConfig = {
   adapterName: 'Convex Adapter',
   debugLogs: false,
   disableIdGeneration: true,
+  mapKeysTransformInput: {
+    id: '_id',
+  },
   mapKeysTransformOutput: {
     _id: 'id',
   },
   supportsNumericIds: false,
+  transaction: false,
   usePlural: false,
   // With supportsDates: false, dates are stored as strings,
   // we convert them to numbers here. This aligns with how
@@ -154,7 +158,7 @@ export const httpAdapter = <
     triggers,
   }: {
     authFunctions: AuthFunctions;
-    debugLogs?: AdapterDebugLogs;
+    debugLogs?: DBAdapterDebugLogOption;
     triggers?: Triggers<DataModel, Schema>;
   }
 ) => {
@@ -164,15 +168,29 @@ export const httpAdapter = <
       debugLogs: debugLogs || false,
     },
     adapter: ({ options }) => {
+      // Disable telemetry in all cases because it requires Node
       options.telemetry = { enabled: false };
 
       return {
         id: 'convex',
-        createSchema,
+        options: {
+          isRunMutationCtx: isRunMutationCtx(ctx),
+        },
         count: async (data) => {
           // Yes, count is just findMany returning a number.
           if (data.where?.some((w) => w.connector === 'OR')) {
-            throw new Error('OR connector not supported in findMany');
+            const results = await asyncMap(data.where, async (w) =>
+              handlePagination(async ({ paginationOpts }) => {
+                return await ctx.runQuery(authFunctions.findMany, {
+                  ...data,
+                  paginationOpts,
+                  where: parseWhere([w]),
+                });
+              })
+            );
+            const docs = unique(results.flatMap((r) => r.docs));
+
+            return docs.length;
           }
 
           const result = await handlePagination(async ({ paginationOpts }) => {
@@ -183,7 +201,7 @@ export const httpAdapter = <
             });
           });
 
-          return result.docs?.length ?? 0;
+          return result.docs.length;
         },
         create: async ({ data, model, select }): Promise<any> => {
           if (!('runMutation' in ctx)) {
@@ -209,6 +227,11 @@ export const httpAdapter = <
             select,
             onCreateHandle: onCreateHandle,
           });
+        },
+        createSchema: async ({ file, tables }) => {
+          const { createSchema } = await import('./createSchema');
+
+          return createSchema({ file, tables });
         },
         delete: async (data) => {
           if (!('runMutation' in ctx)) {
@@ -272,7 +295,30 @@ export const httpAdapter = <
             throw new Error('offset not supported');
           }
           if (data.where?.some((w) => w.connector === 'OR')) {
-            throw new Error('OR connector not supported in findMany');
+            const results = await asyncMap(data.where, async (w) =>
+              handlePagination(
+                async ({ paginationOpts }) => {
+                  return await ctx.runQuery(authFunctions.findMany, {
+                    ...data,
+                    paginationOpts,
+                    where: parseWhere([w]),
+                  });
+                },
+                { limit: data.limit }
+              )
+            );
+            const docs = unique(results.flatMap((r) => r.docs));
+
+            if (data.sortBy) {
+              const result = sortBy(docs, [
+                prop(data.sortBy.field),
+                data.sortBy.direction,
+              ]);
+
+              return result;
+            }
+
+            return docs;
           }
 
           const result = await handlePagination(
@@ -340,7 +386,7 @@ export const httpAdapter = <
         },
         updateMany: async (data) => {
           if (!('runMutation' in ctx)) {
-            throw new Error('ctx is not an action ctx');
+            throw new Error('ctx is not a mutation ctx');
           }
 
           const onUpdateHandle =
@@ -389,7 +435,7 @@ export const dbAdapter = <
   }: {
     authFunctions: AuthFunctions;
     schema: Schema;
-    debugLogs?: AdapterDebugLogs;
+    debugLogs?: DBAdapterDebugLogOption;
     triggers?: Triggers<DataModel, Schema>;
   }
 ) => {
@@ -401,14 +447,33 @@ export const dbAdapter = <
       debugLogs: debugLogs || false,
     },
     adapter: ({ options }) => {
+      // Disable telemetry in all cases because it requires Node
       options.telemetry = { enabled: false };
 
       return {
         id: 'convex',
-        createSchema,
+        options: {
+          isRunMutationCtx: isRunMutationCtx(ctx),
+        },
         count: async (data) => {
           if (data.where?.some((w) => w.connector === 'OR')) {
-            throw new Error('OR connector not supported in findMany');
+            const results = await asyncMap(data.where, async (w) =>
+              handlePagination(async ({ paginationOpts }) => {
+                return await findManyHandler(
+                  ctx,
+                  {
+                    ...data,
+                    paginationOpts,
+                    where: parseWhere([w]),
+                  },
+                  schema,
+                  betterAuthSchema
+                );
+              })
+            );
+            const docs = unique(results.flatMap((r) => r.docs));
+
+            return docs.length;
           }
 
           const result = await handlePagination(async ({ paginationOpts }) => {
@@ -424,7 +489,7 @@ export const dbAdapter = <
             );
           });
 
-          return result.docs?.length ?? 0;
+          return result.docs.length;
         },
         create: async ({ data, model, select }): Promise<any> => {
           const onCreateHandle =
@@ -451,6 +516,11 @@ export const dbAdapter = <
             schema,
             betterAuthSchema
           );
+        },
+        createSchema: async ({ file, tables }) => {
+          const { createSchema } = await import('./createSchema');
+
+          return createSchema({ file, tables });
         },
         delete: async (data) => {
           const onDeleteHandle =
@@ -518,7 +588,35 @@ export const dbAdapter = <
             throw new Error('offset not supported');
           }
           if (data.where?.some((w) => w.connector === 'OR')) {
-            throw new Error('OR connector not supported in findMany');
+            const results = await asyncMap(data.where, async (w) =>
+              handlePagination(
+                async ({ paginationOpts }) => {
+                  return await findManyHandler(
+                    ctx,
+                    {
+                      ...data,
+                      paginationOpts,
+                      where: parseWhere([w]),
+                    },
+                    schema,
+                    betterAuthSchema
+                  );
+                },
+                { limit: data.limit }
+              )
+            );
+            const docs = unique(results.flatMap((r) => r.docs));
+
+            if (data.sortBy) {
+              const result = sortBy(docs, [
+                prop(data.sortBy.field),
+                data.sortBy.direction,
+              ]);
+
+              return result;
+            }
+
+            return docs;
           }
 
           const result = await handlePagination(
