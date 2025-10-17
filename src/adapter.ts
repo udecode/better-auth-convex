@@ -124,6 +124,7 @@ export const adapterConfig = {
   mapKeysTransformOutput: {
     _id: 'id',
   },
+  supportsJSON: false,
   supportsNumericIds: false,
   transaction: false,
   usePlural: false,
