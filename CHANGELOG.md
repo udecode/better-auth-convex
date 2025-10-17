@@ -1,5 +1,11 @@
 # better-auth-convex
 
+## 0.4.1
+
+### Patch Changes
+
+- cd33fd3: `@convex-dev/better-auth@0.9.6`
+
 ## 0.4.0
 
 ### Minor Changes
