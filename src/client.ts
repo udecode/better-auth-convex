@@ -62,13 +62,13 @@ export type Triggers<
     ) => Promise<void>;
     onUpdate?: (
       ctx: GenericMutationCtx<DataModel>,
-      oldDoc: Infer<Schema['tables'][K]['validator']> &
-        IdField<K> &
-        SystemFields,
       newDoc: Infer<Schema['tables'][K]['validator']> &
         IdField<K> & {
           _creationTime: number;
-        }
+        },
+      oldDoc: Infer<Schema['tables'][K]['validator']> &
+        IdField<K> &
+        SystemFields
     ) => Promise<void>;
   };
 };
