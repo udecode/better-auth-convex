@@ -1,5 +1,5 @@
 ---
-"better-auth-convex": patch
+'better-auth-convex': patch
 ---
 
-Update @convex-dev/better-auth to 0.9.6
+`@convex-dev/better-auth@0.9.6`
