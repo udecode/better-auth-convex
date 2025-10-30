@@ -169,6 +169,20 @@ export const {
   updateMany,
   updateOne,
 } = createApi(schema, auth.options);
+
+// Optional: If you need custom mutation builders (e.g., for custom context)
+// Pass internalMutation to both createClient and createApi
+// export const authClient = createClient<DataModel, typeof schema>({
+//   authFunctions,
+//   schema,
+//   internalMutation: myCustomInternalMutation,
+//   triggers: { ... }
+// });
+//
+// export const { create, ... } = createApi(schema, {
+//   ...auth.options,
+//   internalMutation: myCustomInternalMutation,
+// });
 ```
 
 The trigger API exposes both `before*` and `on*` hooks. The `before` variants run inside the same Convex transaction just ahead of the database write, letting you normalize input, enforce invariants, or perform cleanup and return any transformed payload that should be persisted.
@@ -239,6 +253,51 @@ const session = await getSession(ctx);
 // Get headers for auth.api calls
 const headers = await getHeaders(ctx);
 ```
+
+## Custom Mutation Builders
+
+Both `createClient` and `createApi` accept an optional `internalMutation` parameter, allowing you to wrap internal mutations with custom context or behavior.
+
+### Use Cases
+
+This is useful when you need to:
+- Wrap database operations with custom context (e.g., triggers, logging)
+- Apply middleware to all auth mutations
+- Inject dependencies or configuration
+
+### Example with Triggers
+
+```ts
+import { customMutation, customCtx } from 'convex-helpers/server/customFunctions';
+import { internalMutationGeneric } from 'convex/server';
+import { registerTriggers } from '@convex/triggers';
+
+const triggers = registerTriggers();
+
+// Wrap mutations to include trigger-wrapped database
+const internalMutation = customMutation(
+  internalMutationGeneric,
+  customCtx(async (ctx) => ({
+    db: triggers.wrapDB(ctx).db,
+  }))
+);
+
+// Pass to createClient
+export const authClient = createClient<DataModel, typeof schema>({
+  authFunctions,
+  schema,
+  internalMutation, // Use custom mutation builder
+  triggers: { ... }
+});
+
+// Pass to createApi
+export const { create, updateOne, ... } = createApi(schema, {
+  ...auth.options,
+  internalMutation, // Use same custom mutation builder
+});
+```
+
+This ensures all auth operations (CRUD + triggers) use your wrapped database context.
 
 ## Updating the Schema
 

@@ -395,12 +395,18 @@ export const deleteManyHandler = async (
 
 export const createApi = <Schema extends SchemaDefinition<any, any>>(
   schema: Schema,
-  authOptions: BetterAuthOptions
+  {
+    internalMutation,
+    ...authOptions
+  }: BetterAuthOptions & {
+    internalMutation?: typeof internalMutationGeneric;
+  }
 ) => {
   const betterAuthSchema = getAuthTables(authOptions);
+  const mutationBuilder = internalMutation ?? internalMutationGeneric;
 
   return {
-    create: internalMutationGeneric({
+    create: mutationBuilder({
       args: {
         beforeCreateHandle: v.optional(v.string()),
         input: v.union(
@@ -419,7 +425,7 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
       handler: async (ctx, args) =>
         createHandler(ctx, args, schema, betterAuthSchema),
     }),
-    deleteMany: internalMutationGeneric({
+    deleteMany: mutationBuilder({
       args: {
         beforeDeleteHandle: v.optional(v.string()),
         input: v.union(
@@ -440,7 +446,7 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
       handler: async (ctx, args) =>
         deleteManyHandler(ctx, args, schema, betterAuthSchema),
     }),
-    deleteOne: internalMutationGeneric({
+    deleteOne: mutationBuilder({
       args: {
         beforeDeleteHandle: v.optional(v.string()),
         input: v.union(
@@ -490,7 +496,7 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
       handler: async (ctx, args) =>
         findOneHandler(ctx, args, schema, betterAuthSchema),
     }),
-    updateMany: internalMutationGeneric({
+    updateMany: mutationBuilder({
       args: {
         beforeUpdateHandle: v.optional(v.string()),
         input: v.union(
@@ -512,7 +518,7 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
       handler: async (ctx, args) =>
         updateManyHandler(ctx, args, schema, betterAuthSchema),
     }),
-    updateOne: internalMutationGeneric({
+    updateOne: mutationBuilder({
       args: {
         beforeUpdateHandle: v.optional(v.string()),
         input: v.union(

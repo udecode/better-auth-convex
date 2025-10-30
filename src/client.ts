@@ -79,6 +79,7 @@ export const createClient = <
 >(config: {
   authFunctions: AuthFunctions;
   schema: Schema;
+  internalMutation?: typeof internalMutationGeneric;
   triggers?: Triggers<DataModel, Schema>;
 }) => {
   return {
@@ -87,83 +88,88 @@ export const createClient = <
     adapter: (ctx: GenericCtx<DataModel>, options: BetterAuthOptions) =>
       dbAdapter(ctx, options, config),
     httpAdapter: (ctx: GenericCtx<DataModel>) => httpAdapter(ctx, config),
-    triggersApi: () => ({
-      beforeCreate: internalMutationGeneric({
-        args: {
-          data: v.any(),
-          model: v.string(),
-        },
-        handler: async (ctx, args) => {
-          return (
-            (await config?.triggers?.[args.model]?.beforeCreate?.(
+    triggersApi: () => {
+      const mutationBuilder =
+        config.internalMutation ?? internalMutationGeneric;
+
+      return {
+        beforeCreate: mutationBuilder({
+          args: {
+            data: v.any(),
+            model: v.string(),
+          },
+          handler: async (ctx, args) => {
+            return (
+              (await config?.triggers?.[args.model]?.beforeCreate?.(
+                ctx,
+                args.data
+              )) ?? args.data
+            );
+          },
+        }),
+        beforeDelete: mutationBuilder({
+          args: {
+            doc: v.any(),
+            model: v.string(),
+          },
+          handler: async (ctx, args) => {
+            return (
+              (await config?.triggers?.[args.model]?.beforeDelete?.(
+                ctx,
+                args.doc
+              )) ?? args.doc
+            );
+          },
+        }),
+        beforeUpdate: mutationBuilder({
+          args: {
+            doc: v.any(),
+            model: v.string(),
+            update: v.any(),
+          },
+          handler: async (ctx, args) => {
+            return (
+              (await config?.triggers?.[args.model]?.beforeUpdate?.(
+                ctx,
+                args.doc,
+                args.update
+              )) ?? args.update
+            );
+          },
+        }),
+        onCreate: mutationBuilder({
+          args: {
+            doc: v.any(),
+            model: v.string(),
+          },
+          handler: async (ctx, args) => {
+            await config?.triggers?.[args.model]?.onCreate?.(ctx, args.doc);
+          },
+        }),
+        onDelete: mutationBuilder({
+          args: {
+            doc: v.any(),
+            model: v.string(),
+          },
+          handler: async (ctx, args) => {
+            await config?.triggers?.[args.model]?.onDelete?.(ctx, args.doc);
+          },
+        }),
+        onUpdate: mutationBuilder({
+          args: {
+            model: v.string(),
+            newDoc: v.any(),
+            oldDoc: v.any(),
+          },
+          handler: async (ctx, args) => {
+            await config?.triggers?.[args.model]?.onUpdate?.(
               ctx,
-              args.data
-            )) ?? args.data
-          );
-        },
-      }),
-      beforeDelete: internalMutationGeneric({
-        args: {
-          doc: v.any(),
-          model: v.string(),
-        },
-        handler: async (ctx, args) => {
-          return (
-            (await config?.triggers?.[args.model]?.beforeDelete?.(
-              ctx,
-              args.doc
-            )) ?? args.doc
-          );
-        },
-      }),
-      beforeUpdate: internalMutationGeneric({
-        args: {
-          doc: v.any(),
-          model: v.string(),
-          update: v.any(),
-        },
-        handler: async (ctx, args) => {
-          return (
-            (await config?.triggers?.[args.model]?.beforeUpdate?.(
-              ctx,
-              args.doc,
-              args.update
-            )) ?? args.update
-          );
-        },
-      }),
-      onCreate: internalMutationGeneric({
-        args: {
-          doc: v.any(),
-          model: v.string(),
-        },
-        handler: async (ctx, args) => {
-          await config?.triggers?.[args.model]?.onCreate?.(ctx, args.doc);
-        },
-      }),
-      onDelete: internalMutationGeneric({
-        args: {
-          doc: v.any(),
-          model: v.string(),
-        },
-        handler: async (ctx, args) => {
-          await config?.triggers?.[args.model]?.onDelete?.(ctx, args.doc);
-        },
-      }),
-      onUpdate: internalMutationGeneric({
-        args: {
-          model: v.string(),
-          newDoc: v.any(),
-          oldDoc: v.any(),
-        },
-        handler: async (ctx, args) => {
-          await config?.triggers?.[args.model]?.onUpdate?.(
-            ctx,
-            args.newDoc,
-            args.oldDoc
-          );
-        },
-      }),
-    }),
+              args.newDoc,
+              args.oldDoc
+            );
+          },
+        }),
+      };
+    },
   };
 };
