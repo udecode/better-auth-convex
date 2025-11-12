@@ -1,5 +1,11 @@
 # better-auth-convex
 
+## 0.4.3
+
+### Patch Changes
+
+- e7c102d: fix: map Convex table names to Better Auth model keys in isUniqueField
+
 ## 0.4.2
 
 ### Patch Changes
