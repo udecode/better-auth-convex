@@ -62,14 +62,20 @@ const isUniqueField = (
   model: string,
   field: string
 ) => {
-  const fields =
-    betterAuthSchema[model as keyof typeof betterAuthSchema].fields;
+  // Map Convex table name (e.g., "users") to Better Auth model key (e.g., "user")
+  // by finding the key where betterAuthSchema[key].modelName === model
+  const betterAuthModel =
+    Object.keys(betterAuthSchema).find(
+      (key) => betterAuthSchema[key as keyof typeof betterAuthSchema].modelName === model
+    ) || model;
+  const modelSchema =
+    betterAuthSchema[betterAuthModel as keyof typeof betterAuthSchema];
 
-  if (!fields) {
+  if (!modelSchema?.fields) {
     return false;
   }
 
-  return Object.entries(fields)
+  return Object.entries(modelSchema.fields)
     .filter(([, value]) => value.unique)
     .map(([key]) => key)
     .includes(field);
