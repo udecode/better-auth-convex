@@ -19,6 +19,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./dist/index.mjs",
+    "./schema": "./dist/schema.mjs",
     "./package.json": "./package.json"
   },
   "main": "./dist/index.mjs",

@@ -6,6 +6,8 @@ export * from './adapter';
 export * from './adapterUtils';
 export * from './api';
 export * from './client';
-export * from './createSchema';
 export * from './helpers';
 export * from './registerRoutes';
+
+// createSchema is exported separately via better-auth-convex/schema
+// because it uses Node.js APIs (path) that aren't available in Convex runtime
