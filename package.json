@@ -24,6 +24,9 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "brl": "sh tooling/brl.sh",
     "build": "tsdown --config tooling/tsdown.config.ts",
