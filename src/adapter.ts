@@ -228,7 +228,7 @@ export const httpAdapter = <
           });
         },
         createSchema: async ({ file, tables }) => {
-          const { createSchema } = await import('./schema');
+          const { createSchema } = await import('./createSchema');
 
           return createSchema({ file, tables });
         },
@@ -519,7 +519,7 @@ export const dbAdapter = <
           );
         },
         createSchema: async ({ file, tables }) => {
-          const { createSchema } = await import('./schema');
+          const { createSchema } = await import('./createSchema');
 
           return createSchema({ file, tables });
         },
