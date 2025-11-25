@@ -1,5 +1,11 @@
 # better-auth-convex
 
+## 0.4.6
+
+### Patch Changes
+
+- [`078fd8d`](https://github.com/udecode/better-auth-convex/commit/078fd8d9ff4390093b287d3d0f9a831a1ee99637) Thanks [@zbeyens](https://github.com/zbeyens)! - Move `createSchema` to separate entry point (`better-auth-convex/schema`) to fix Convex bundler error with Node.js `path` module
+
 ## 0.4.5
 
 ### Patch Changes
