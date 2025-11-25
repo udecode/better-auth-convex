@@ -35,6 +35,7 @@
     "brl": "sh tooling/brl.sh",
     "build": "tsup",
     "build:watch": "tsup:watch",
+    "check": "bun lint && bun run build && bun typecheck",
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "release": "bun run build && bun changeset publish",

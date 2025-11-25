@@ -43,11 +43,11 @@ const mergedIndexFields = (tables: BetterAuthDBSchema) =>
   Object.fromEntries(
     Object.entries(tables).map(([key, table]) => {
       const manualIndexes =
-        indexFields[key as keyof typeof indexFields]?.map((index) => {
-          return typeof index === 'string'
+        indexFields[key as keyof typeof indexFields]?.map((index) =>
+          typeof index === 'string'
             ? (table.fields[index]?.fieldName ?? index)
-            : index.map((i) => table.fields[i]?.fieldName ?? i);
-        }) || [];
+            : index.map((i) => table.fields[i]?.fieldName ?? i)
+        ) || [];
       const specialFieldIndexes = Object.keys(
         specialFields(tables)[key as keyof ReturnType<typeof specialFields>] ||
           {}
@@ -94,8 +94,7 @@ import { v } from "convex/values";
 export const tables = {
 `;
 
-  for (const tableKey in tables) {
-    const table = tables[tableKey]!;
+  for (const [tableKey, table] of Object.entries(tables)) {
     const modelName = table.modelName;
 
     // No id fields in Convex schema
@@ -103,7 +102,7 @@ export const tables = {
       Object.entries(table.fields).filter(([key]) => key !== 'id')
     );
 
-    function getType(name: string, field: DBFieldAttribute) {
+    function getType(_name: string, field: DBFieldAttribute) {
       const type = field.type as
         | 'boolean'
         | 'date'
@@ -113,13 +112,13 @@ export const tables = {
         | `${'number' | 'string'}[]`;
 
       const typeMap: Record<typeof type, string> = {
-        boolean: `v.boolean()`,
-        date: `v.number()`,
-        json: `v.string()`,
-        number: `v.number()`,
-        'number[]': `v.array(v.number())`,
-        string: `v.string()`,
-        'string[]': `v.array(v.string())`,
+        boolean: 'v.boolean()',
+        date: 'v.number()',
+        json: 'v.string()',
+        number: 'v.number()',
+        'number[]': 'v.array(v.number())',
+        string: 'v.string()',
+        'string[]': 'v.array(v.string())',
       } as const;
 
       return typeMap[type];

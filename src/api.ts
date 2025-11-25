@@ -1,16 +1,16 @@
 import type { BetterAuthOptions } from 'better-auth';
 
 import { getAuthTables } from 'better-auth/db';
-import { asyncMap } from 'convex-helpers';
-import { partial } from 'convex-helpers/validators';
 import {
   type FunctionHandle,
-  type SchemaDefinition,
   internalMutationGeneric,
   internalQueryGeneric,
   paginationOptsValidator,
+  type SchemaDefinition,
 } from 'convex/server';
 import { type GenericId, v } from 'convex/values';
+import { asyncMap } from 'convex-helpers';
+import { partial } from 'convex-helpers/validators';
 
 import {
   adapterWhereValidator,
@@ -124,9 +124,7 @@ export const findOneHandler = async (
   },
   schema: Schema,
   betterAuthSchema: any
-) => {
-  return await listOne(ctx, schema, betterAuthSchema, args);
-};
+) => await listOne(ctx, schema, betterAuthSchema, args);
 
 export const findManyHandler = async (
   ctx: any,
@@ -143,9 +141,7 @@ export const findManyHandler = async (
   },
   schema: Schema,
   betterAuthSchema: any
-) => {
-  return await paginate(ctx, schema, betterAuthSchema, args);
-};
+) => await paginate(ctx, schema, betterAuthSchema, args);
 
 export const updateOneHandler = async (
   ctx: any,
@@ -429,16 +425,16 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
       args: {
         beforeDeleteHandle: v.optional(v.string()),
         input: v.union(
-          ...Object.keys(schema.tables).map((tableName) => {
-            return v.object({
+          ...Object.keys(schema.tables).map((tableName) =>
+            v.object({
               model: v.literal(tableName),
               where: v.optional(
                 v.array(
                   whereValidator(schema, tableName as keyof Schema['tables'])
                 )
               ),
-            });
-          })
+            })
+          )
         ),
         paginationOpts: paginationOptsValidator,
         onDeleteHandle: v.optional(v.string()),
@@ -450,16 +446,16 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
       args: {
         beforeDeleteHandle: v.optional(v.string()),
         input: v.union(
-          ...Object.keys(schema.tables).map((tableName) => {
-            return v.object({
+          ...Object.keys(schema.tables).map((tableName) =>
+            v.object({
               model: v.literal(tableName),
               where: v.optional(
                 v.array(
                   whereValidator(schema, tableName as keyof Schema['tables'])
                 )
               ),
-            });
-          })
+            })
+          )
         ),
         onDeleteHandle: v.optional(v.string()),
       },

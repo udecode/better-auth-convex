@@ -1,27 +1,23 @@
 import type { GenericCtx } from '@convex-dev/better-auth';
-import type { BetterAuthOptions, Where } from 'better-auth';
-import type { SetOptional } from 'type-fest';
-
 import { isRunMutationCtx } from '@convex-dev/better-auth/utils';
+import type { BetterAuthOptions, Where } from 'better-auth';
 import {
   type AdapterFactoryOptions,
-  type DBAdapterDebugLogOption,
   createAdapterFactory,
+  type DBAdapterDebugLogOption,
 } from 'better-auth/adapters';
 import { getAuthTables } from 'better-auth/db';
-import { asyncMap } from 'convex-helpers';
 import {
+  createFunctionHandle,
   type FunctionHandle,
   type GenericDataModel,
   type PaginationOptions,
   type PaginationResult,
   type SchemaDefinition,
-  createFunctionHandle,
 } from 'convex/server';
+import { asyncMap } from 'convex-helpers';
 import { prop, sortBy, unique } from 'remeda';
-
-import type { AuthFunctions, Triggers } from './client';
-
+import type { SetOptional } from 'type-fest';
 import {
   createHandler,
   deleteManyHandler,
@@ -31,6 +27,7 @@ import {
   updateManyHandler,
   updateOneHandler,
 } from './api';
+import type { AuthFunctions, Triggers } from './client';
 
 export const handlePagination = async (
   next: ({
@@ -100,8 +97,8 @@ export type ConvexCleanedWhere = Where & {
   value: number[] | string[] | boolean | number | string | null;
 };
 
-export const parseWhere = (where?: Where[]): ConvexCleanedWhere[] => {
-  return where?.map((where) => {
+export const parseWhere = (where?: Where[]): ConvexCleanedWhere[] =>
+  where?.map((where) => {
     if (where.value instanceof Date) {
       return {
         ...where,
@@ -111,7 +108,6 @@ export const parseWhere = (where?: Where[]): ConvexCleanedWhere[] => {
 
     return where;
   }) as ConvexCleanedWhere[];
-};
 
 export const adapterConfig = {
   adapterId: 'convex',
@@ -181,26 +177,28 @@ export const httpAdapter = <
           // Yes, count is just findMany returning a number.
           if (data.where?.some((w) => w.connector === 'OR')) {
             const results = await asyncMap(data.where, async (w) =>
-              handlePagination(async ({ paginationOpts }) => {
-                return await ctx.runQuery(authFunctions.findMany, {
-                  ...data,
-                  paginationOpts,
-                  where: parseWhere([w]),
-                });
-              })
+              handlePagination(
+                async ({ paginationOpts }) =>
+                  await ctx.runQuery(authFunctions.findMany, {
+                    ...data,
+                    paginationOpts,
+                    where: parseWhere([w]),
+                  })
+              )
             );
             const docs = unique(results.flatMap((r) => r.docs));
 
             return docs.length;
           }
 
-          const result = await handlePagination(async ({ paginationOpts }) => {
-            return await ctx.runQuery(authFunctions.findMany, {
-              ...data,
-              paginationOpts,
-              where: parseWhere(data.where),
-            });
-          });
+          const result = await handlePagination(
+            async ({ paginationOpts }) =>
+              await ctx.runQuery(authFunctions.findMany, {
+                ...data,
+                paginationOpts,
+                where: parseWhere(data.where),
+              })
+          );
 
           return result.docs.length;
         },
@@ -223,10 +221,10 @@ export const httpAdapter = <
               : undefined;
 
           return ctx.runMutation(authFunctions.create, {
-            beforeCreateHandle: beforeCreateHandle,
+            beforeCreateHandle,
             input: { data, model },
             select,
-            onCreateHandle: onCreateHandle,
+            onCreateHandle,
           });
         },
         createSchema: async ({ file, tables }) => {
@@ -252,12 +250,12 @@ export const httpAdapter = <
                 )) as FunctionHandle<'mutation'>)
               : undefined;
           await ctx.runMutation(authFunctions.deleteOne, {
-            beforeDeleteHandle: beforeDeleteHandle,
+            beforeDeleteHandle,
             input: {
               model: data.model,
               where: parseWhere(data.where),
             },
-            onDeleteHandle: onDeleteHandle,
+            onDeleteHandle,
           });
         },
         deleteMany: async (data) => {
@@ -277,17 +275,18 @@ export const httpAdapter = <
                   authFunctions.beforeDelete
                 )) as FunctionHandle<'mutation'>)
               : undefined;
-          const result = await handlePagination(async ({ paginationOpts }) => {
-            return await ctx.runMutation(authFunctions.deleteMany, {
-              beforeDeleteHandle: beforeDeleteHandle,
-              input: {
-                ...data,
-                where: parseWhere(data.where),
-              },
-              paginationOpts,
-              onDeleteHandle: onDeleteHandle,
-            });
-          });
+          const result = await handlePagination(
+            async ({ paginationOpts }) =>
+              await ctx.runMutation(authFunctions.deleteMany, {
+                beforeDeleteHandle,
+                input: {
+                  ...data,
+                  where: parseWhere(data.where),
+                },
+                paginationOpts,
+                onDeleteHandle,
+              })
+          );
 
           return result.count;
         },
@@ -298,13 +297,12 @@ export const httpAdapter = <
           if (data.where?.some((w) => w.connector === 'OR')) {
             const results = await asyncMap(data.where, async (w) =>
               handlePagination(
-                async ({ paginationOpts }) => {
-                  return await ctx.runQuery(authFunctions.findMany, {
+                async ({ paginationOpts }) =>
+                  await ctx.runQuery(authFunctions.findMany, {
                     ...data,
                     paginationOpts,
                     where: parseWhere([w]),
-                  });
-                },
+                  }),
                 { limit: data.limit }
               )
             );
@@ -323,13 +321,12 @@ export const httpAdapter = <
           }
 
           const result = await handlePagination(
-            async ({ paginationOpts }) => {
-              return await ctx.runQuery(authFunctions.findMany, {
+            async ({ paginationOpts }) =>
+              await ctx.runQuery(authFunctions.findMany, {
                 ...data,
                 paginationOpts,
                 where: parseWhere(data.where),
-              });
-            },
+              }),
             { limit: data.limit }
           );
 
@@ -373,13 +370,13 @@ export const httpAdapter = <
                 : undefined;
 
             return ctx.runMutation(authFunctions.updateOne, {
-              beforeUpdateHandle: beforeUpdateHandle,
+              beforeUpdateHandle,
               input: {
                 model: data.model as any,
                 update: data.update as any,
                 where: parseWhere(data.where),
               },
-              onUpdateHandle: onUpdateHandle,
+              onUpdateHandle,
             });
           }
 
@@ -403,17 +400,18 @@ export const httpAdapter = <
                 )) as FunctionHandle<'mutation'>)
               : undefined;
 
-          const result = await handlePagination(async ({ paginationOpts }) => {
-            return await ctx.runMutation(authFunctions.updateMany, {
-              beforeUpdateHandle: beforeUpdateHandle,
-              input: {
-                ...(data as any),
-                where: parseWhere(data.where),
-              },
-              paginationOpts,
-              onUpdateHandle: onUpdateHandle,
-            });
-          });
+          const result = await handlePagination(
+            async ({ paginationOpts }) =>
+              await ctx.runMutation(authFunctions.updateMany, {
+                beforeUpdateHandle,
+                input: {
+                  ...(data as any),
+                  where: parseWhere(data.where),
+                },
+                paginationOpts,
+                onUpdateHandle,
+              })
+          );
 
           return result.count;
         },
@@ -459,36 +457,38 @@ export const dbAdapter = <
         count: async (data) => {
           if (data.where?.some((w) => w.connector === 'OR')) {
             const results = await asyncMap(data.where, async (w) =>
-              handlePagination(async ({ paginationOpts }) => {
-                return await findManyHandler(
-                  ctx,
-                  {
-                    ...data,
-                    paginationOpts,
-                    where: parseWhere([w]),
-                  },
-                  schema,
-                  betterAuthSchema
-                );
-              })
+              handlePagination(
+                async ({ paginationOpts }) =>
+                  await findManyHandler(
+                    ctx,
+                    {
+                      ...data,
+                      paginationOpts,
+                      where: parseWhere([w]),
+                    },
+                    schema,
+                    betterAuthSchema
+                  )
+              )
             );
             const docs = unique(results.flatMap((r) => r.docs));
 
             return docs.length;
           }
 
-          const result = await handlePagination(async ({ paginationOpts }) => {
-            return await findManyHandler(
-              ctx,
-              {
-                ...data,
-                paginationOpts,
-                where: parseWhere(data.where),
-              },
-              schema,
-              betterAuthSchema
-            );
-          });
+          const result = await handlePagination(
+            async ({ paginationOpts }) =>
+              await findManyHandler(
+                ctx,
+                {
+                  ...data,
+                  paginationOpts,
+                  where: parseWhere(data.where),
+                },
+                schema,
+                betterAuthSchema
+              )
+          );
 
           return result.docs.length;
         },
@@ -509,10 +509,10 @@ export const dbAdapter = <
           return createHandler(
             ctx,
             {
-              beforeCreateHandle: beforeCreateHandle,
+              beforeCreateHandle,
               input: { data, model },
               select,
-              onCreateHandle: onCreateHandle,
+              onCreateHandle,
             },
             schema,
             betterAuthSchema
@@ -540,12 +540,12 @@ export const dbAdapter = <
           await deleteOneHandler(
             ctx,
             {
-              beforeDeleteHandle: beforeDeleteHandle,
+              beforeDeleteHandle,
               input: {
                 model: data.model,
                 where: parseWhere(data.where),
               },
-              onDeleteHandle: onDeleteHandle,
+              onDeleteHandle,
             },
             schema,
             betterAuthSchema
@@ -565,22 +565,23 @@ export const dbAdapter = <
                 )) as FunctionHandle<'mutation'>)
               : undefined;
 
-          const result = await handlePagination(async ({ paginationOpts }) => {
-            return await deleteManyHandler(
-              ctx,
-              {
-                beforeDeleteHandle: beforeDeleteHandle,
-                input: {
-                  ...data,
-                  where: parseWhere(data.where),
+          const result = await handlePagination(
+            async ({ paginationOpts }) =>
+              await deleteManyHandler(
+                ctx,
+                {
+                  beforeDeleteHandle,
+                  input: {
+                    ...data,
+                    where: parseWhere(data.where),
+                  },
+                  paginationOpts,
+                  onDeleteHandle,
                 },
-                paginationOpts,
-                onDeleteHandle: onDeleteHandle,
-              },
-              schema,
-              betterAuthSchema
-            );
-          });
+                schema,
+                betterAuthSchema
+              )
+          );
 
           return result.count;
         },
@@ -591,8 +592,8 @@ export const dbAdapter = <
           if (data.where?.some((w) => w.connector === 'OR')) {
             const results = await asyncMap(data.where, async (w) =>
               handlePagination(
-                async ({ paginationOpts }) => {
-                  return await findManyHandler(
+                async ({ paginationOpts }) =>
+                  await findManyHandler(
                     ctx,
                     {
                       ...data,
@@ -601,8 +602,7 @@ export const dbAdapter = <
                     },
                     schema,
                     betterAuthSchema
-                  );
-                },
+                  ),
                 { limit: data.limit }
               )
             );
@@ -621,8 +621,8 @@ export const dbAdapter = <
           }
 
           const result = await handlePagination(
-            async ({ paginationOpts }) => {
-              return await findManyHandler(
+            async ({ paginationOpts }) =>
+              await findManyHandler(
                 ctx,
                 {
                   ...data,
@@ -631,8 +631,7 @@ export const dbAdapter = <
                 },
                 schema,
                 betterAuthSchema
-              );
-            },
+              ),
             { limit: data.limit }
           );
 
@@ -685,13 +684,13 @@ export const dbAdapter = <
             return updateOneHandler(
               ctx,
               {
-                beforeUpdateHandle: beforeUpdateHandle,
+                beforeUpdateHandle,
                 input: {
                   model: data.model as any,
                   update: data.update as any,
                   where: parseWhere(data.where),
                 },
-                onUpdateHandle: onUpdateHandle,
+                onUpdateHandle,
               },
               schema,
               betterAuthSchema
@@ -714,22 +713,23 @@ export const dbAdapter = <
                 )) as FunctionHandle<'mutation'>)
               : undefined;
 
-          const result = await handlePagination(async ({ paginationOpts }) => {
-            return await updateManyHandler(
-              ctx,
-              {
-                beforeUpdateHandle: beforeUpdateHandle,
-                input: {
-                  ...(data as any),
-                  where: parseWhere(data.where),
+          const result = await handlePagination(
+            async ({ paginationOpts }) =>
+              await updateManyHandler(
+                ctx,
+                {
+                  beforeUpdateHandle,
+                  input: {
+                    ...(data as any),
+                    where: parseWhere(data.where),
+                  },
+                  paginationOpts,
+                  onUpdateHandle,
                 },
-                paginationOpts,
-                onUpdateHandle: onUpdateHandle,
-              },
-              schema,
-              betterAuthSchema
-            );
-          });
+                schema,
+                betterAuthSchema
+              )
+          );
 
           return result.count;
         },

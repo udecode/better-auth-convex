@@ -7,9 +7,9 @@ import {
   type GenericMutationCtx,
   type GenericSchema,
   type IdField,
+  internalMutationGeneric,
   type SchemaDefinition,
   type SystemFields,
-  internalMutationGeneric,
 } from 'convex/server';
 import { type Infer, v } from 'convex/values';
 
@@ -39,19 +39,19 @@ export type Triggers<
     beforeCreate?: (
       ctx: GenericMutationCtx<DataModel>,
       data: Infer<Schema['tables'][K]['validator']>
-    ) => Promise<Infer<Schema['tables'][K]['validator']> | void>;
+    ) => Promise<Infer<Schema['tables'][K]['validator']> | undefined>;
     beforeDelete?: (
       ctx: GenericMutationCtx<DataModel>,
       doc: Infer<Schema['tables'][K]['validator']> & IdField<K> & SystemFields
     ) => Promise<
       | (Infer<Schema['tables'][K]['validator']> & IdField<K> & SystemFields)
-      | void
+      | undefined
     >;
     beforeUpdate?: (
       ctx: GenericMutationCtx<DataModel>,
       doc: Infer<Schema['tables'][K]['validator']> & IdField<K> & SystemFields,
       update: Partial<Infer<Schema['tables'][K]['validator']>>
-    ) => Promise<Partial<Infer<Schema['tables'][K]['validator']>> | void>;
+    ) => Promise<Partial<Infer<Schema['tables'][K]['validator']>> | undefined>;
     onCreate?: (
       ctx: GenericMutationCtx<DataModel>,
       doc: Infer<Schema['tables'][K]['validator']> & IdField<K> & SystemFields
@@ -81,95 +81,83 @@ export const createClient = <
   schema: Schema;
   internalMutation?: typeof internalMutationGeneric;
   triggers?: Triggers<DataModel, Schema>;
-}) => {
-  return {
-    authFunctions: config.authFunctions,
-    triggers: config.triggers,
-    adapter: (ctx: GenericCtx<DataModel>, options: BetterAuthOptions) =>
-      dbAdapter(ctx, options, config),
-    httpAdapter: (ctx: GenericCtx<DataModel>) => httpAdapter(ctx, config),
-    triggersApi: () => {
-      const mutationBuilder =
-        config.internalMutation ?? internalMutationGeneric;
+}) => ({
+  authFunctions: config.authFunctions,
+  triggers: config.triggers,
+  adapter: (ctx: GenericCtx<DataModel>, options: BetterAuthOptions) =>
+    dbAdapter(ctx, options, config),
+  httpAdapter: (ctx: GenericCtx<DataModel>) => httpAdapter(ctx, config),
+  triggersApi: () => {
+    const mutationBuilder = config.internalMutation ?? internalMutationGeneric;
 
-      return {
-        beforeCreate: mutationBuilder({
-          args: {
-            data: v.any(),
-            model: v.string(),
-          },
-          handler: async (ctx, args) => {
-            return (
-              (await config?.triggers?.[args.model]?.beforeCreate?.(
-                ctx,
-                args.data
-              )) ?? args.data
-            );
-          },
-        }),
-        beforeDelete: mutationBuilder({
-          args: {
-            doc: v.any(),
-            model: v.string(),
-          },
-          handler: async (ctx, args) => {
-            return (
-              (await config?.triggers?.[args.model]?.beforeDelete?.(
-                ctx,
-                args.doc
-              )) ?? args.doc
-            );
-          },
-        }),
-        beforeUpdate: mutationBuilder({
-          args: {
-            doc: v.any(),
-            model: v.string(),
-            update: v.any(),
-          },
-          handler: async (ctx, args) => {
-            return (
-              (await config?.triggers?.[args.model]?.beforeUpdate?.(
-                ctx,
-                args.doc,
-                args.update
-              )) ?? args.update
-            );
-          },
-        }),
-        onCreate: mutationBuilder({
-          args: {
-            doc: v.any(),
-            model: v.string(),
-          },
-          handler: async (ctx, args) => {
-            await config?.triggers?.[args.model]?.onCreate?.(ctx, args.doc);
-          },
-        }),
-        onDelete: mutationBuilder({
-          args: {
-            doc: v.any(),
-            model: v.string(),
-          },
-          handler: async (ctx, args) => {
-            await config?.triggers?.[args.model]?.onDelete?.(ctx, args.doc);
-          },
-        }),
-        onUpdate: mutationBuilder({
-          args: {
-            model: v.string(),
-            newDoc: v.any(),
-            oldDoc: v.any(),
-          },
-          handler: async (ctx, args) => {
-            await config?.triggers?.[args.model]?.onUpdate?.(
-              ctx,
-              args.newDoc,
-              args.oldDoc
-            );
-          },
-        }),
-      };
-    },
-  };
-};
+    return {
+      beforeCreate: mutationBuilder({
+        args: {
+          data: v.any(),
+          model: v.string(),
+        },
+        handler: async (ctx, args) =>
+          (await config?.triggers?.[args.model]?.beforeCreate?.(
+            ctx,
+            args.data
+          )) ?? args.data,
+      }),
+      beforeDelete: mutationBuilder({
+        args: {
+          doc: v.any(),
+          model: v.string(),
+        },
+        handler: async (ctx, args) =>
+          (await config?.triggers?.[args.model]?.beforeDelete?.(
+            ctx,
+            args.doc
+          )) ?? args.doc,
+      }),
+      beforeUpdate: mutationBuilder({
+        args: {
+          doc: v.any(),
+          model: v.string(),
+          update: v.any(),
+        },
+        handler: async (ctx, args) =>
+          (await config?.triggers?.[args.model]?.beforeUpdate?.(
+            ctx,
+            args.doc,
+            args.update
+          )) ?? args.update,
+      }),
+      onCreate: mutationBuilder({
+        args: {
+          doc: v.any(),
+          model: v.string(),
+        },
+        handler: async (ctx, args) => {
+          await config?.triggers?.[args.model]?.onCreate?.(ctx, args.doc);
+        },
+      }),
+      onDelete: mutationBuilder({
+        args: {
+          doc: v.any(),
+          model: v.string(),
+        },
+        handler: async (ctx, args) => {
+          await config?.triggers?.[args.model]?.onDelete?.(ctx, args.doc);
+        },
+      }),
+      onUpdate: mutationBuilder({
+        args: {
+          model: v.string(),
+          newDoc: v.any(),
+          oldDoc: v.any(),
+        },
+        handler: async (ctx, args) => {
+          await config?.triggers?.[args.model]?.onUpdate?.(
+            ctx,
+            args.newDoc,
+            args.oldDoc
+          );
+        },
+      }),
+    };
+  },
+});

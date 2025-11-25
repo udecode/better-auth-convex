@@ -1,4 +1,5 @@
 import type { BetterAuthDbSchema } from 'better-auth/db';
+import { stripIndent } from 'common-tags';
 import type {
   DocumentByName,
   GenericDataModel,
@@ -8,12 +9,9 @@ import type {
   SchemaDefinition,
   TableNamesInDataModel,
 } from 'convex/server';
-
-import { stripIndent } from 'common-tags';
-import { asyncMap } from 'convex-helpers';
-import { stream } from 'convex-helpers/server/stream';
-import { mergedStream } from 'convex-helpers/server/stream';
 import { type GenericId, type Infer, v } from 'convex/values';
+import { asyncMap } from 'convex-helpers';
+import { mergedStream, stream } from 'convex-helpers/server/stream';
 
 export const adapterWhereValidator = v.object({
   connector: v.optional(v.union(v.literal('AND'), v.literal('OR'))),
@@ -66,7 +64,9 @@ const isUniqueField = (
   // by finding the key where betterAuthSchema[key].modelName === model
   const betterAuthModel =
     Object.keys(betterAuthSchema).find(
-      (key) => betterAuthSchema[key as keyof typeof betterAuthSchema].modelName === model
+      (key) =>
+        betterAuthSchema[key as keyof typeof betterAuthSchema].modelName ===
+        model
     ) || model;
   const modelSchema =
     betterAuthSchema[betterAuthModel as keyof typeof betterAuthSchema];
@@ -131,15 +131,14 @@ const findIndex = (
     );
   }
 
-  const where = args.where?.filter((w) => {
-    return (
+  const where = args.where?.filter(
+    (w) =>
       (!w.operator ||
         ['eq', 'gt', 'gte', 'in', 'lt', 'lte', 'not_in'].includes(
           w.operator
         )) &&
       w.field !== '_id'
-    );
-  });
+  );
 
   if (!where?.length && !args.sortBy) {
     return;
@@ -188,9 +187,7 @@ const findIndex = (
   const indexEqFields =
     where
       ?.filter((w) => !w.operator || w.operator === 'eq')
-      .sort((a, b) => {
-        return a.field.localeCompare(b.field);
-      })
+      .sort((a, b) => a.field.localeCompare(b.field))
       .map((w) => [w.field, w.value]) ?? [];
 
   if (!indexEqFields?.length && !boundField && !args.sortBy) {
@@ -451,24 +448,25 @@ const generateQuery = (
           index.indexDescriptor,
           hasValues
             ? (q: any) => {
+                let query = q;
                 for (const [idx, value] of (values?.eq ?? []).entries()) {
-                  q = q.eq(index.fields[idx], value);
+                  query = query.eq(index.fields[idx], value);
                 }
 
                 if (values?.lt) {
-                  q = q.lt(boundField, values.lt);
+                  query = query.lt(boundField, values.lt);
                 }
                 if (values?.lte) {
-                  q = q.lte(boundField, values.lte);
+                  query = query.lte(boundField, values.lte);
                 }
                 if (values?.gt) {
-                  q = q.gt(boundField, values.gt);
+                  query = query.gt(boundField, values.gt);
                 }
                 if (values?.gte) {
-                  q = q.gte(boundField, values.gte);
+                  query = query.gte(boundField, values.gte);
                 }
 
-                return q;
+                return query;
               }
             : undefined
         )
@@ -603,9 +601,9 @@ export const paginate = async <
     }
     // For ids, just use asyncMap + .get()
     if (inWhere.field === '_id') {
-      const docs = await asyncMap(inWhere.value as any[], async (value) => {
-        return ctx.db.get(value as GenericId<T>);
-      });
+      const docs = await asyncMap(inWhere.value as any[], async (value) =>
+        ctx.db.get(value as GenericId<T>)
+      );
       const filteredDocs = docs
         .flatMap((doc) => (doc ? [doc] : []))
         .filter((doc) => filterByWhere(doc, args.where, (w) => w !== inWhere));
@@ -641,8 +639,8 @@ export const paginate = async <
       };
     }
 
-    const streams = inWhere.value.map((value) => {
-      return generateQuery(ctx, schema, {
+    const streams = inWhere.value.map((value) =>
+      generateQuery(ctx, schema, {
         ...args,
         where: args.where?.map((w) => {
           if (w === inWhere) {
@@ -651,8 +649,8 @@ export const paginate = async <
 
           return w;
         }),
-      });
-    });
+      })
+    );
     const result = await mergedStream(
       streams,
       [
@@ -712,8 +710,8 @@ export const listOne = async <
   schema: SchemaDefinition<any, any>,
   betterAuthSchema: BetterAuthDbSchema,
   args: Infer<typeof adapterArgsValidator>
-): Promise<Doc | null> => {
-  return (
+): Promise<Doc | null> =>
+  (
     await paginate(ctx, schema, betterAuthSchema, {
       ...args,
       paginationOpts: {
@@ -722,4 +720,3 @@ export const listOne = async <
       },
     })
   ).page[0] as Doc | null;
-};

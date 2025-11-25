@@ -41,7 +41,8 @@
       },
       "nursery": {
         "noShadow": "off", // chill,
-        "noIncrementDecrement": "off" // chill
+        "noIncrementDecrement": "off", // chill,
+        "useMaxParams": "off"
       },
       "complexity": {
         "useSimplifiedLogicExpression": "off", // false +
@@ -61,7 +62,8 @@
       },
       "performance": {
         "noNamespaceImport": "off", // shadcn
-        "noImgElement": "off" // agnostic
+        "noImgElement": "off", // agnostic,
+        "noBarrelFile": "off"
       }
     }
   }
