@@ -1,8 +1,8 @@
-!.*
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 
-.git
 **/tsconfig.tsbuildinfo
-CLAUDE.local.md
 
 # dependencies
 src/generated
@@ -46,8 +46,6 @@ convex/.env
 *.tsbuildinfo
 next-env.d.ts
 
-.vscode
-
 # Sentry Auth Token
 .sentryclirc
 
@@ -77,7 +75,6 @@ bower_components
 *.launch
 .settings/
 *.sublime-workspace
-.vscode/*
 
 # Logs
 logs
@@ -91,3 +88,13 @@ yarn-error.log*
 
 # AI Cache
 .cache/
+.codex
+
+# START Skiller Generated Files
+/.claude/skills
+/.codex/config.toml
+/.cursor/rules
+/.skillz
+/AGENTS.md
+/CLAUDE.md
+# END Skiller Generated Files

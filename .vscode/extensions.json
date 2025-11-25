@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "unional.vscode-sort-package-json",
+    "biomejs.biome",
+    "Anthropic.claude-code",
+    "oven.bun-vscode"
+  ]
+}
