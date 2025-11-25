@@ -1,5 +1,11 @@
 # better-auth-convex
 
+## 0.4.4
+
+### Patch Changes
+
+- [`b3ec361`](https://github.com/udecode/better-auth-convex/commit/b3ec361bfa310ba594af763436d1ea57e71a606e) Thanks [@zbeyens](https://github.com/zbeyens)! - Upgrade peer dependencies: `@convex-dev/better-auth@>=0.9.7`, `better-auth@>=1.3.34`, `convex@>=1.29.3`
+
 ## 0.4.3
 
 ### Patch Changes
@@ -19,7 +25,7 @@
     internalMutationGeneric,
     customCtx(async (ctx) => ({
       db: triggers.wrapDB(ctx).db,
-    }))
+    })),
   );
 
   // Pass to createClient
