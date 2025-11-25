@@ -1,5 +1,11 @@
 # better-auth-convex
 
+## 0.4.7
+
+### Patch Changes
+
+- [`f522483`](https://github.com/udecode/better-auth-convex/commit/f5224839610d671d1dd9b92068d6e8c7a01db73a) Thanks [@zbeyens](https://github.com/zbeyens)! - Fix
+
 ## 0.4.6
 
 ### Patch Changes
