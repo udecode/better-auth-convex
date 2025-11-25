@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "common-tags": "1.8.2",
-    "convex-helpers": "0.1.104",
+    "convex-helpers": "0.1.106",
     "remeda": "2.32.0",
     "type-fest": "4.39.1"
   },
@@ -54,19 +54,19 @@
     "@changesets/get-github-info": "0.6.0",
     "@convex-dev/better-auth": "0.9.7",
     "@types/common-tags": "1.8.4",
-    "@types/node": "24.5.2",
+    "@types/node": "24.10.1",
     "barrelsby": "2.8.1",
     "better-auth": "1.3.34",
-    "convex": "1.28.2",
+    "convex": "1.29.3",
     "lefthook": "2.0.4",
     "tsup": "8.5.1",
     "typescript": "5.9.3",
     "ultracite": "6.3.6"
   },
   "peerDependencies": {
-    "@convex-dev/better-auth": ">0.9.7",
+    "@convex-dev/better-auth": ">=0.9.7",
     "better-auth": ">=1.3.34",
-    "convex": ">=1.28.2"
+    "convex": ">=1.29.3"
   },
   "packageManager": "bun@1.3.3",
   "publishConfig": {
