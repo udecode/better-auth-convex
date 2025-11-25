@@ -1,5 +1,11 @@
 # better-auth-convex
 
+## 0.4.5
+
+### Patch Changes
+
+- [`ce3dc18`](https://github.com/udecode/better-auth-convex/commit/ce3dc1805fdf333f4c12a084a0afbee9d2e4eb17) Thanks [@zbeyens](https://github.com/zbeyens)! - Fix npm package missing dist folder
+
 ## 0.4.4
 
 ### Patch Changes
