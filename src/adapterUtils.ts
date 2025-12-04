@@ -1,4 +1,4 @@
-import type { BetterAuthDbSchema } from 'better-auth/db';
+import type { BetterAuthDBSchema } from 'better-auth/db';
 import { stripIndent } from 'common-tags';
 import type {
   DocumentByName,
@@ -56,7 +56,7 @@ export const adapterArgsValidator = v.object({
 });
 
 const isUniqueField = (
-  betterAuthSchema: BetterAuthDbSchema,
+  betterAuthSchema: BetterAuthDBSchema,
   model: string,
   field: string
 ) => {
@@ -82,7 +82,7 @@ const isUniqueField = (
 };
 
 export const hasUniqueFields = (
-  betterAuthSchema: BetterAuthDbSchema,
+  betterAuthSchema: BetterAuthDBSchema,
   model: string,
   input: Record<string, any>
 ) => {
@@ -273,7 +273,7 @@ export const checkUniqueFields = async <
 >(
   ctx: GenericQueryCtx<GenericDataModel>,
   schema: Schema,
-  betterAuthSchema: BetterAuthDbSchema,
+  betterAuthSchema: BetterAuthDBSchema,
   table: string,
   input: Record<string, any>,
   doc?: Record<string, any>
@@ -514,7 +514,7 @@ export const paginate = async <
 >(
   ctx: GenericQueryCtx<GenericDataModel>,
   schema: SchemaDefinition<any, any>,
-  betterAuthSchema: BetterAuthDbSchema,
+  betterAuthSchema: BetterAuthDBSchema,
   args: Infer<typeof adapterArgsValidator> & {
     paginationOpts: PaginationOptions;
   }
@@ -708,7 +708,7 @@ export const listOne = async <
 >(
   ctx: GenericQueryCtx<GenericDataModel>,
   schema: SchemaDefinition<any, any>,
-  betterAuthSchema: BetterAuthDbSchema,
+  betterAuthSchema: BetterAuthDBSchema,
   args: Infer<typeof adapterArgsValidator>
 ): Promise<Doc | null> =>
   (
