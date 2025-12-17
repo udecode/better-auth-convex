@@ -1,5 +1,11 @@
 # better-auth-convex
 
+## 0.4.9
+
+### Patch Changes
+
+- [#28](https://github.com/udecode/better-auth-convex/pull/28) [`8b845a2`](https://github.com/udecode/better-auth-convex/commit/8b845a2eec0eea03f66d76428e41d18e086775ee) Thanks [@zbeyens](https://github.com/zbeyens)! - Add `skipValidation` option to `createApi` for smaller generated types. When enabled, uses generic `v.any()` validators instead of typed validators. Since these are internal functions, validation is optional and this can significantly reduce bundle size.
+
 ## 0.4.8
 
 ### Patch Changes
