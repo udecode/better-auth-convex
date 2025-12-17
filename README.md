@@ -168,7 +168,10 @@ export const {
   findOne,
   updateMany,
   updateOne,
-} = createApi(schema, auth.options);
+} = createApi(schema, {
+  ...auth.options,
+  skipValidation: true, // Optional: smaller generated types
+});
 
 // Optional: If you need custom mutation builders (e.g., for custom context)
 // Pass internalMutation to both createClient and createApi
