@@ -393,28 +393,90 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
   schema: Schema,
   {
     internalMutation,
+    skipValidation,
     ...authOptions
   }: BetterAuthOptions & {
     internalMutation?: typeof internalMutationGeneric;
+    /** Skip input validation for smaller generated types. Since these are internal functions, validation is optional. */
+    skipValidation?: boolean;
   }
 ) => {
   const betterAuthSchema = getAuthTables(authOptions);
   const mutationBuilder = internalMutation ?? internalMutationGeneric;
 
+  // Generic validators for skipValidation mode (much smaller generated types)
+  const anyInput = v.object({
+    data: v.any(),
+    model: v.string(),
+  });
+  const anyInputWithWhere = v.object({
+    model: v.string(),
+    where: v.optional(v.array(v.any())),
+  });
+  const anyInputWithUpdate = v.object({
+    model: v.string(),
+    update: v.any(),
+    where: v.optional(v.array(v.any())),
+  });
+
+  // Typed validators (only auth tables)
+  const authTableNames = new Set(Object.keys(betterAuthSchema));
+  const authTables = Object.entries(schema.tables).filter(([name]) =>
+    authTableNames.has(name)
+  );
+  const authTableKeys = authTables.map(([name]) => name);
+
+  const createInput = skipValidation
+    ? anyInput
+    : v.union(
+        ...authTables.map(([model, table]) => {
+          const fields = partial((table as any).validator.fields);
+          return v.object({
+            data: v.object(fields),
+            model: v.literal(model),
+          });
+        })
+      );
+
+  const deleteInput = skipValidation
+    ? anyInputWithWhere
+    : v.union(
+        ...authTableKeys.map((tableName) =>
+          v.object({
+            model: v.literal(tableName),
+            where: v.optional(
+              v.array(
+                whereValidator(schema, tableName as keyof Schema['tables'])
+              )
+            ),
+          })
+        )
+      );
+
+  const modelValidator = skipValidation
+    ? v.string()
+    : v.union(...authTableKeys.map((model) => v.literal(model)));
+
+  const updateInput = skipValidation
+    ? anyInputWithUpdate
+    : v.union(
+        ...authTables.map(
+          ([tableName, table]: [string, Schema['tables'][string]]) => {
+            const fields = partial(table.validator.fields);
+            return v.object({
+              model: v.literal(tableName),
+              update: v.object(fields),
+              where: v.optional(v.array(whereValidator(schema, tableName))),
+            });
+          }
+        )
+      );
+
   return {
     create: mutationBuilder({
       args: {
         beforeCreateHandle: v.optional(v.string()),
-        input: v.union(
-          ...Object.entries(schema.tables).map(([model, table]) => {
-            const fields = partial((table as any).validator.fields);
-
-            return v.object({
-              data: v.object(fields),
-              model: v.literal(model),
-            });
-          })
-        ),
+        input: createInput,
         select: v.optional(v.array(v.string())),
         onCreateHandle: v.optional(v.string()),
       },
@@ -424,18 +486,7 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
     deleteMany: mutationBuilder({
       args: {
         beforeDeleteHandle: v.optional(v.string()),
-        input: v.union(
-          ...Object.keys(schema.tables).map((tableName) =>
-            v.object({
-              model: v.literal(tableName),
-              where: v.optional(
-                v.array(
-                  whereValidator(schema, tableName as keyof Schema['tables'])
-                )
-              ),
-            })
-          )
-        ),
+        input: deleteInput,
         paginationOpts: paginationOptsValidator,
         onDeleteHandle: v.optional(v.string()),
       },
@@ -445,18 +496,7 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
     deleteOne: mutationBuilder({
       args: {
         beforeDeleteHandle: v.optional(v.string()),
-        input: v.union(
-          ...Object.keys(schema.tables).map((tableName) =>
-            v.object({
-              model: v.literal(tableName),
-              where: v.optional(
-                v.array(
-                  whereValidator(schema, tableName as keyof Schema['tables'])
-                )
-              ),
-            })
-          )
-        ),
+        input: deleteInput,
         onDeleteHandle: v.optional(v.string()),
       },
       handler: async (ctx, args) =>
@@ -465,9 +505,7 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
     findMany: internalQueryGeneric({
       args: {
         limit: v.optional(v.number()),
-        model: v.union(
-          ...Object.keys(schema.tables).map((model) => v.literal(model))
-        ),
+        model: modelValidator,
         offset: v.optional(v.number()),
         paginationOpts: paginationOptsValidator,
         sortBy: v.optional(
@@ -483,9 +521,7 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
     }),
     findOne: internalQueryGeneric({
       args: {
-        model: v.union(
-          ...Object.keys(schema.tables).map((model) => v.literal(model))
-        ),
+        model: modelValidator,
         select: v.optional(v.array(v.string())),
         where: v.optional(v.array(adapterWhereValidator)),
       },
@@ -495,19 +531,7 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
     updateMany: mutationBuilder({
       args: {
         beforeUpdateHandle: v.optional(v.string()),
-        input: v.union(
-          ...Object.entries(schema.tables).map(
-            ([tableName, table]: [string, Schema['tables'][string]]) => {
-              const fields = partial(table.validator.fields);
-
-              return v.object({
-                model: v.literal(tableName),
-                update: v.object(fields),
-                where: v.optional(v.array(whereValidator(schema, tableName))),
-              });
-            }
-          )
-        ),
+        input: updateInput,
         paginationOpts: paginationOptsValidator,
         onUpdateHandle: v.optional(v.string()),
       },
@@ -517,19 +541,7 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
     updateOne: mutationBuilder({
       args: {
         beforeUpdateHandle: v.optional(v.string()),
-        input: v.union(
-          ...Object.entries(schema.tables).map(
-            ([tableName, table]: [string, Schema['tables'][string]]) => {
-              const fields = partial(table.validator.fields);
-
-              return v.object({
-                model: v.literal(tableName),
-                update: v.object(fields),
-                where: v.optional(v.array(whereValidator(schema, tableName))),
-              });
-            }
-          )
-        ),
+        input: updateInput,
         onUpdateHandle: v.optional(v.string()),
       },
       handler: async (ctx, args) =>
