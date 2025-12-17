@@ -168,7 +168,12 @@ export const {
   findOne,
   updateMany,
   updateOne,
-} = createApi(schema, auth.options);
+} = createApi(schema, {
+  ...auth.options,
+  // Optional: Skip input validation for smaller generated types
+  // Since these are internal functions, validation is optional
+  skipValidation: true,
+});
 
 // Optional: If you need custom mutation builders (e.g., for custom context)
 // Pass internalMutation to both createClient and createApi
@@ -253,6 +258,21 @@ const session = await getSession(ctx);
 // Get headers for auth.api calls
 const headers = await getHeaders(ctx);
 ```
+
+## API Options
+
+### `skipValidation`
+
+The `createApi` function accepts a `skipValidation` option that uses generic validators instead of typed validators:
+
+```ts
+export const { create, ... } = createApi(schema, {
+  ...auth.options,
+  skipValidation: true, // Smaller generated types
+});
+```
+
+**When to use**: Enable this option to significantly reduce generated type sizes. Since these are internal functions only called by the auth adapter, input validation is optional. The trade-off is less precise TypeScript inference for the internal API arguments.
 
 ## Custom Mutation Builders
 
