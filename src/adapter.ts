@@ -26,8 +26,8 @@ import {
   findOneHandler,
   updateManyHandler,
   updateOneHandler,
-} from './api';
-import type { AuthFunctions, Triggers } from './client';
+} from './create-api';
+import type { AuthFunctions, Triggers } from './create-client';
 
 export const handlePagination = async (
   next: ({
