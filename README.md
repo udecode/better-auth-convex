@@ -42,7 +42,7 @@ import { getAuthConfigProvider } from "@convex-dev/better-auth/auth-config";
 import type { AuthConfig } from "convex/server";
 
 export default {
-  providers: [getAuthConfigProvider()],
+  providers: [getAuthConfigProvider({ jwks: process.env.JWKS })],
 } satisfies AuthConfig;
 ```
 
@@ -130,7 +130,7 @@ export const createAuthOptions = (ctx: GenericCtx) =>
     plugins: [
       convex({
         authConfig,
-        jwksRotateOnTokenGenerationError: true, // Enable initially for key rotation
+        jwks: process.env.JWKS,
       }),
       admin(),
       organization({
@@ -176,7 +176,9 @@ export const {
   findOne,
   updateMany,
   updateOne,
-} = createApi(schema, createAuthOptions, {
+  getLatestJwks,
+  rotateKeys,
+} = createApi(schema, createAuth, {
   // Optional: Skip input validation for smaller generated types
   // Since these are internal functions, validation is optional
   skipValidation: true,
@@ -191,7 +193,7 @@ export const {
 //   triggers: { ... }
 // });
 //
-// export const { create, ... } = createApi(schema, createAuthOptions, {
+// export const { create, ... } = createApi(schema, createAuth, {
 //   internalMutation: myCustomInternalMutation,
 // });
 ```
@@ -209,6 +211,24 @@ const http = httpRouter();
 registerRoutes(http, createAuth);
 
 export default http;
+```
+
+### Generate JWKS
+
+After deploying, generate and set the JWKS env var:
+
+```bash
+# Development
+npx convex run auth:getLatestJwks | npx convex env set JWKS
+
+# Production
+npx convex run auth:getLatestJwks --prod | npx convex env set JWKS --prod
+```
+
+To rotate keys (invalidates all existing tokens, forces re-authentication):
+
+```bash
+npx convex run auth:rotateKeys | npx convex env set JWKS
 ```
 
 ## Key Concepts
@@ -272,7 +292,7 @@ const headers = await getHeaders(ctx);
 The `createApi` function accepts a `skipValidation` option that uses generic validators instead of typed validators:
 
 ```ts
-export const { create, ... } = createApi(schema, createAuthOptions, {
+export const { create, ... } = createApi(schema, createAuth, {
   skipValidation: true, // Smaller generated types
 });
 ```
@@ -317,7 +337,7 @@ export const authClient = createClient<DataModel, typeof schema>({
 });
 
 // Pass to createApi
-export const { create, updateOne, ... } = createApi(schema, createAuthOptions, {
+export const { create, updateOne, ... } = createApi(schema, createAuth, {
   internalMutation, // Use same custom mutation builder
 });
 ```

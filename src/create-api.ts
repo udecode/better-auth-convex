@@ -1,8 +1,7 @@
-import type { BetterAuthOptions } from 'better-auth';
-
 import { getAuthTables } from 'better-auth/db';
 import {
   type FunctionHandle,
+  internalActionGeneric,
   internalMutationGeneric,
   internalQueryGeneric,
   paginationOptsValidator,
@@ -20,6 +19,7 @@ import {
   paginate,
   selectFields,
 } from './adapter-utils';
+import type { CreateAuth } from './types';
 
 type Schema = SchemaDefinition<any, any>;
 
@@ -391,14 +391,14 @@ export const deleteManyHandler = async (
 
 export const createApi = <Schema extends SchemaDefinition<any, any>>(
   schema: Schema,
-  createAuthOptions: (ctx: any) => BetterAuthOptions,
+  createAuth: CreateAuth,
   options?: {
     internalMutation?: typeof internalMutationGeneric;
     /** Skip input validation for smaller generated types. Since these are internal functions, validation is optional. */
     skipValidation?: boolean;
   }
 ) => {
-  const betterAuthSchema = getAuthTables(createAuthOptions({} as any));
+  const betterAuthSchema = getAuthTables(createAuth({} as any).options);
   const { internalMutation, skipValidation } = options ?? {};
   const mutationBuilder = internalMutation ?? internalMutationGeneric;
 
@@ -544,6 +544,22 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
       },
       handler: async (ctx, args) =>
         updateOneHandler(ctx, args, schema, betterAuthSchema),
+    }),
+    getLatestJwks: mutationBuilder({
+      args: {},
+      handler: async (ctx) => {
+        const auth = createAuth(ctx);
+
+        return (auth.api as any).getLatestJwks();
+      },
+    }),
+    rotateKeys: internalActionGeneric({
+      args: {},
+      handler: async (ctx) => {
+        const auth = createAuth(ctx);
+
+        return (auth.api as any).rotateKeys();
+      },
     }),
   };
 };
