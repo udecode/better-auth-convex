@@ -124,10 +124,9 @@ export const adapterConfig = {
   supportsNumericIds: false,
   transaction: false,
   usePlural: false,
-  // With supportsDates: false, dates are stored as strings,
-  // we convert them to numbers here. This aligns with how
-  // Convex stores _creationTime, and avoids a breaking change.
+  // Dates provided as strings
   supportsDates: false,
+  // Convert dates to numbers. This aligns with how Convex stores _creationTime and avoids a breaking change.
   customTransformInput: ({ data, fieldAttributes }) => {
     if (data && fieldAttributes.type === 'date') {
       return new Date(data).getTime();
@@ -228,7 +227,7 @@ export const httpAdapter = <
           });
         },
         createSchema: async ({ file, tables }) => {
-          const { createSchema } = await import('./createSchema');
+          const { createSchema } = await import('./create-schema');
 
           return createSchema({ file, tables });
         },
@@ -519,7 +518,7 @@ export const dbAdapter = <
           );
         },
         createSchema: async ({ file, tables }) => {
-          const { createSchema } = await import('./createSchema');
+          const { createSchema } = await import('./create-schema');
 
           return createSchema({ file, tables });
         },

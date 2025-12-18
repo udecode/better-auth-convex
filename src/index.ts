@@ -6,6 +6,6 @@ export * from './adapter';
 export * from './adapter-utils';
 export * from './api';
 export * from './client';
-export * from './createSchema';
+export * from './create-schema';
 export * from './helpers';
 export * from './registerRoutes';
