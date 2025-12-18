@@ -19,7 +19,7 @@ import {
   listOne,
   paginate,
   selectFields,
-} from './adapterUtils';
+} from './adapter-utils';
 
 type Schema = SchemaDefinition<any, any>;
 

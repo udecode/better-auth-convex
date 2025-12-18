@@ -3,7 +3,7 @@
  */
 
 export * from './adapter';
-export * from './adapterUtils';
+export * from './adapter-utils';
 export * from './api';
 export * from './client';
 export * from './createSchema';
