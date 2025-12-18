@@ -3,9 +3,10 @@
  */
 
 export * from './adapter';
-export * from './adapterUtils';
-export * from './api';
-export * from './client';
-export * from './createSchema';
+export * from './adapter-utils';
+export * from './create-api';
+export * from './create-client';
+export * from './create-schema';
 export * from './helpers';
 export * from './registerRoutes';
+export * from './types';

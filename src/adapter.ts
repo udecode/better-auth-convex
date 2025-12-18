@@ -26,8 +26,8 @@ import {
   findOneHandler,
   updateManyHandler,
   updateOneHandler,
-} from './api';
-import type { AuthFunctions, Triggers } from './client';
+} from './create-api';
+import type { AuthFunctions, Triggers } from './create-client';
 
 export const handlePagination = async (
   next: ({
@@ -124,10 +124,9 @@ export const adapterConfig = {
   supportsNumericIds: false,
   transaction: false,
   usePlural: false,
-  // With supportsDates: false, dates are stored as strings,
-  // we convert them to numbers here. This aligns with how
-  // Convex stores _creationTime, and avoids a breaking change.
+  // Dates provided as strings
   supportsDates: false,
+  // Convert dates to numbers. This aligns with how Convex stores _creationTime and avoids a breaking change.
   customTransformInput: ({ data, fieldAttributes }) => {
     if (data && fieldAttributes.type === 'date') {
       return new Date(data).getTime();
@@ -228,7 +227,7 @@ export const httpAdapter = <
           });
         },
         createSchema: async ({ file, tables }) => {
-          const { createSchema } = await import('./createSchema');
+          const { createSchema } = await import('./create-schema');
 
           return createSchema({ file, tables });
         },
@@ -425,7 +424,7 @@ export const dbAdapter = <
   Schema extends SchemaDefinition<any, any>,
 >(
   ctx: GenericCtx<DataModel>,
-  options: BetterAuthOptions,
+  createAuthOptions: (ctx: any) => BetterAuthOptions,
   {
     authFunctions,
     debugLogs,
@@ -438,7 +437,7 @@ export const dbAdapter = <
     triggers?: Triggers<DataModel, Schema>;
   }
 ) => {
-  const betterAuthSchema = getAuthTables(options);
+  const betterAuthSchema = getAuthTables(createAuthOptions({} as any));
 
   return createAdapterFactory({
     config: {
@@ -519,7 +518,7 @@ export const dbAdapter = <
           );
         },
         createSchema: async ({ file, tables }) => {
-          const { createSchema } = await import('./createSchema');
+          const { createSchema } = await import('./create-schema');
 
           return createSchema({ file, tables });
         },

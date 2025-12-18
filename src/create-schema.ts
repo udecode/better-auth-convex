@@ -20,7 +20,7 @@ const specialFields = (tables: BetterAuthDBSchema) =>
         const fields = Object.fromEntries(
           Object.entries(table.fields)
             .map(([fieldKey, field]) => [
-              fieldKey,
+              field.fieldName ?? fieldKey,
               {
                 ...(field.sortable ? { sortable: true } : {}),
                 ...(field.unique ? { unique: true } : {}),
