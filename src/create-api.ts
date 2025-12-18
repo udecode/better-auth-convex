@@ -391,17 +391,15 @@ export const deleteManyHandler = async (
 
 export const createApi = <Schema extends SchemaDefinition<any, any>>(
   schema: Schema,
-  {
-    internalMutation,
-    skipValidation,
-    ...authOptions
-  }: BetterAuthOptions & {
+  createAuthOptions: (ctx: any) => BetterAuthOptions,
+  options?: {
     internalMutation?: typeof internalMutationGeneric;
     /** Skip input validation for smaller generated types. Since these are internal functions, validation is optional. */
     skipValidation?: boolean;
   }
 ) => {
-  const betterAuthSchema = getAuthTables(authOptions);
+  const betterAuthSchema = getAuthTables(createAuthOptions({} as any));
+  const { internalMutation, skipValidation } = options ?? {};
   const mutationBuilder = internalMutation ?? internalMutationGeneric;
 
   // Generic validators for skipValidation mode (much smaller generated types)

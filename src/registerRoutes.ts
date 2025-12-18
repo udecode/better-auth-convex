@@ -3,15 +3,7 @@ import type { betterAuth } from 'better-auth';
 import { type HttpRouter, httpActionGeneric } from 'convex/server';
 import { corsRouter } from 'convex-helpers/server/cors';
 
-export type CreateAuth =
-  | ((ctx: any) => ReturnType<typeof betterAuth>)
-  | ((
-      ctx: any,
-      opts?: { optionsOnly?: boolean }
-    ) => ReturnType<typeof betterAuth>);
-
-export const getStaticAuth = (createAuth: CreateAuth) =>
-  createAuth({}, { optionsOnly: true });
+export type CreateAuth = (ctx: any) => ReturnType<typeof betterAuth>;
 
 export const registerRoutes = (
   http: HttpRouter,
@@ -19,8 +11,8 @@ export const registerRoutes = (
   opts: {
     cors?:
       | {
-          allowedHeaders?: string[];
           // These values are appended to the default values
+          allowedHeaders?: string[];
           allowedOrigins?: string[];
           exposedHeaders?: string[];
         }
@@ -28,7 +20,7 @@ export const registerRoutes = (
     verbose?: boolean;
   } = {}
 ) => {
-  const staticAuth = getStaticAuth(createAuth);
+  const staticAuth = createAuth({} as any);
   const path = staticAuth.options.basePath ?? '/api/auth';
   const authRequestHandler = httpActionGeneric(async (ctx, request) => {
     if (opts?.verbose) {

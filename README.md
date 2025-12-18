@@ -18,18 +18,18 @@ The official `@convex-dev/better-auth` component stores auth tables in a compone
 
 ## Prerequisites
 
-- Follow the [official Better Auth + Convex setup guide](https://convex-better-auth.netlify.app/) first
-- Choose your [framework guide](https://convex-better-auth.netlify.app/framework-guides/next)
+- Follow the [official Better Auth + Convex setup guide](https://labs.convex.dev/better-auth) first
+- Choose your [framework guide](https://labs.convex.dev/better-auth/framework-guides/next)
   - **IGNORE these steps from the framework guide**:
     - Step 2: "Register the component" - We don't use the component approach
     - Step 5: `convex/auth.ts` - We'll use a different setup
-    - Step 7: `convex/http.ts` - We use different route registration
+    - Step 8: `convex/http.ts` - We use different route registration
 - Then come back here to install locally
 
 ## Installation
 
 ```bash
-pnpm add better-auth@1.3.34 better-auth-convex
+pnpm add better-auth@1.4.7 better-auth-convex
 ```
 
 ## Local Setup
@@ -37,19 +37,30 @@ pnpm add better-auth@1.3.34 better-auth-convex
 You'll need `convex/auth.config.ts` and update your files to install Better Auth directly in your app:
 
 ```ts
+// convex/auth.config.ts
+import { getAuthConfigProvider } from "@convex-dev/better-auth/auth-config";
+import type { AuthConfig } from "convex/server";
+
+export default {
+  providers: [getAuthConfigProvider()],
+} satisfies AuthConfig;
+```
+
+```ts
 // convex/auth.ts
-import { betterAuth } from 'better-auth';
-import { convex } from '@convex-dev/better-auth/plugins';
-import { admin, organization } from 'better-auth/plugins'; // Optional plugins
+import { betterAuth, type BetterAuthOptions } from "better-auth";
+import { convex } from "@convex-dev/better-auth/plugins";
+import { admin, organization } from "better-auth/plugins"; // Optional plugins
 import {
   type AuthFunctions,
   createClient,
   createApi,
-} from 'better-auth-convex';
-import { internal } from './_generated/api';
-import type { MutationCtx, QueryCtx, GenericCtx } from './_generated/server';
-import type { DataModel } from './_generated/dataModel';
-import schema from './schema'; // YOUR app schema with auth tables
+} from "better-auth-convex";
+import { internal } from "./_generated/api";
+import type { MutationCtx, QueryCtx, GenericCtx } from "./_generated/server";
+import type { DataModel } from "./_generated/dataModel";
+import schema from "./schema"; // YOUR app schema with auth tables
+import authConfig from "./auth.config";
 
 // 1. Internal API functions for auth operations
 const authFunctions: AuthFunctions = internal.auth;
@@ -64,7 +75,7 @@ export const authClient = createClient<DataModel, typeof schema>({
         // Ensure every user has a username, filling in a simple fallback
         const username =
           data.username?.trim() ||
-          data.email?.split('@')[0] ||
+          data.email?.split("@")[0] ||
           `user-${Date.now()}`;
 
         return {
@@ -75,7 +86,7 @@ export const authClient = createClient<DataModel, typeof schema>({
       onCreate: async (ctx, user) => {
         // Direct access to your database
         // Example: Create personal organization
-        const orgId = await ctx.db.insert('organization', {
+        const orgId = await ctx.db.insert("organization", {
           name: `${user.name}'s Workspace`,
           slug: `personal-${user._id}`,
           // ... other fields
@@ -112,18 +123,15 @@ export const authClient = createClient<DataModel, typeof schema>({
   },
 });
 
-// 3. Create auth configuration (with options for HTTP-only mode)
-export const createAuth = (
-  ctx: GenericCtx,
-  { optionsOnly } = { optionsOnly: false }
-) => {
-  const baseURL = process.env.NEXT_PUBLIC_SITE_URL!;
-
-  return betterAuth({
-    baseURL,
-    logger: { disabled: optionsOnly },
+// 3. Auth options factory
+export const createAuthOptions = (ctx: GenericCtx) =>
+  ({
+    baseURL: process.env.SITE_URL!,
     plugins: [
-      convex(), // Required
+      convex({
+        authConfig,
+        jwksRotateOnTokenGenerationError: true, // Enable initially for key rotation
+      }),
       admin(),
       organization({
         // Organization plugin config
@@ -135,17 +143,17 @@ export const createAuth = (
     },
     database: authClient.httpAdapter(ctx),
     // ... other config (social providers, user fields, etc.)
-  });
-};
+  }) satisfies BetterAuthOptions;
 
-// 4. Static auth instance for configuration
-export const auth = createAuth({} as any, { optionsOnly: true });
+// 4. Create auth instance
+export const createAuth = (ctx: GenericCtx) =>
+  betterAuth(createAuthOptions(ctx));
 
 // 5. IMPORTANT: Use getAuth for queries/mutations (direct DB access)
 export const getAuth = <Ctx extends QueryCtx | MutationCtx>(ctx: Ctx) => {
   return betterAuth({
-    ...auth.options,
-    database: authClient.adapter(ctx, auth.options),
+    ...createAuthOptions({} as any),
+    database: authClient.adapter(ctx, createAuthOptions),
   });
 };
 
@@ -168,8 +176,7 @@ export const {
   findOne,
   updateMany,
   updateOne,
-} = createApi(schema, {
-  ...auth.options,
+} = createApi(schema, createAuthOptions, {
   // Optional: Skip input validation for smaller generated types
   // Since these are internal functions, validation is optional
   skipValidation: true,
@@ -184,8 +191,7 @@ export const {
 //   triggers: { ... }
 // });
 //
-// export const { create, ... } = createApi(schema, {
-//   ...auth.options,
+// export const { create, ... } = createApi(schema, createAuthOptions, {
 //   internalMutation: myCustomInternalMutation,
 // });
 ```
@@ -194,9 +200,9 @@ The trigger API exposes both `before*` and `on*` hooks. The `before` variants ru
 
 ```ts
 // convex/http.ts
-import { httpRouter } from 'convex/server';
-import { registerRoutes } from 'better-auth-convex';
-import { createAuth } from './auth';
+import { httpRouter } from "convex/server";
+import { registerRoutes } from "better-auth-convex";
+import { createAuth } from "./auth";
 
 const http = httpRouter();
 
@@ -247,7 +253,7 @@ export const someAction = action({
 All helpers are exported from the main package:
 
 ```ts
-import { getAuthUserId, getSession, getHeaders } from 'better-auth-convex';
+import { getAuthUserId, getSession, getHeaders } from "better-auth-convex";
 
 // Get current user ID
 const userId = await getAuthUserId(ctx);
@@ -266,8 +272,7 @@ const headers = await getHeaders(ctx);
 The `createApi` function accepts a `skipValidation` option that uses generic validators instead of typed validators:
 
 ```ts
-export const { create, ... } = createApi(schema, {
-  ...auth.options,
+export const { create, ... } = createApi(schema, createAuthOptions, {
   skipValidation: true, // Smaller generated types
 });
 ```
@@ -281,6 +286,7 @@ Both `createClient` and `createApi` accept an optional `internalMutation` parame
 ### Use Cases
 
 This is useful when you need to:
+
 - Wrap database operations with custom context (e.g., triggers, logging)
 - Apply middleware to all auth mutations
 - Inject dependencies or configuration
@@ -311,8 +317,7 @@ export const authClient = createClient<DataModel, typeof schema>({
 });
 
 // Pass to createApi
-export const { create, updateOne, ... } = createApi(schema, {
-  ...auth.options,
+export const { create, updateOne, ... } = createApi(schema, createAuthOptions, {
   internalMutation, // Use same custom mutation builder
 });
 ```
@@ -332,8 +337,8 @@ cd convex && npx @better-auth/cli generate -y --output authSchema.ts
 Import the generated schema in your `convex/schema.ts`:
 
 ```ts
-import { authSchema } from './authSchema';
-import { defineSchema } from 'convex/server';
+import { authSchema } from "./authSchema";
+import { defineSchema } from "convex/server";
 
 export default defineSchema({
   ...authSchema,
@@ -347,15 +352,15 @@ Alternatively, use the generated schema as a reference to manually update your e
 
 ```ts
 // Example: Adding a missing field discovered from generated schema
-import { defineSchema, defineTable } from 'convex/server';
-import { v } from 'convex/values';
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
 
 export default defineSchema({
   user: defineTable({
     // ... existing fields
     twoFactorEnabled: v.optional(v.union(v.null(), v.boolean())), // New field from Better Auth update
     // ... rest of your schema
-  }).index('email_name', ['email', 'name']),
+  }).index("email_name", ["email", "name"]),
   // ... other indexes
 });
 ```
@@ -366,13 +371,13 @@ Better Auth may log warnings about missing indexes for certain queries. You can 
 
 ```ts
 // convex/schema.ts
-import { authSchema } from './authSchema';
-import { defineSchema } from 'convex/server';
+import { authSchema } from "./authSchema";
+import { defineSchema } from "convex/server";
 
 export default defineSchema({
   ...authSchema,
   // Override with custom indexes
-  user: authSchema.user.index('username', ['username']),
+  user: authSchema.user.index("username", ["username"]),
   // Your other tables
 });
 ```
@@ -381,4 +386,4 @@ export default defineSchema({
 
 ## Credits
 
-Built on top of [Better Auth](https://better-auth.com) and [@convex-dev/better-auth](https://github.com/get-convex/better-auth), optimized for [Convex](https://convex.dev).
+Built on top of [Better Auth](https://www.better-auth.com) and [@convex-dev/better-auth](https://labs.convex.dev/better-auth), optimized for [Convex](https://www.convex.dev).

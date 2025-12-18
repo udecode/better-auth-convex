@@ -84,8 +84,10 @@ export const createClient = <
 }) => ({
   authFunctions: config.authFunctions,
   triggers: config.triggers,
-  adapter: (ctx: GenericCtx<DataModel>, options: BetterAuthOptions) =>
-    dbAdapter(ctx, options, config),
+  adapter: (
+    ctx: GenericCtx<DataModel>,
+    createAuthOptions: (ctx: any) => BetterAuthOptions
+  ) => dbAdapter(ctx, createAuthOptions, config),
   httpAdapter: (ctx: GenericCtx<DataModel>) => httpAdapter(ctx, config),
   triggersApi: () => {
     const mutationBuilder = config.internalMutation ?? internalMutationGeneric;
