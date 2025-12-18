@@ -9,3 +9,4 @@ export * from './create-client';
 export * from './create-schema';
 export * from './helpers';
 export * from './registerRoutes';
+export * from './types';

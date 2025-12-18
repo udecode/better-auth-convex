@@ -1,9 +1,8 @@
 /** biome-ignore-all lint/suspicious/noConsole: lib */
-import type { betterAuth } from 'better-auth';
 import { type HttpRouter, httpActionGeneric } from 'convex/server';
 import { corsRouter } from 'convex-helpers/server/cors';
 
-export type CreateAuth = (ctx: any) => ReturnType<typeof betterAuth>;
+import type { CreateAuth } from './types';
 
 export const registerRoutes = (
   http: HttpRouter,
