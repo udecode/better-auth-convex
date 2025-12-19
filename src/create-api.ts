@@ -545,7 +545,7 @@ export const createApi = <Schema extends SchemaDefinition<any, any>>(
       handler: async (ctx, args) =>
         updateOneHandler(ctx, args, schema, betterAuthSchema),
     }),
-    getLatestJwks: mutationBuilder({
+    getLatestJwks: internalActionGeneric({
       args: {},
       handler: async (ctx) => {
         const auth = createAuth(ctx);

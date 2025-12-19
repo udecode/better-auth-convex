@@ -219,7 +219,7 @@ export const httpAdapter = <
                 )) as FunctionHandle<'mutation'>)
               : undefined;
 
-          return ctx.runMutation(authFunctions.create, {
+          return await ctx.runMutation(authFunctions.create, {
             beforeCreateHandle,
             input: { data, model },
             select,
@@ -332,6 +332,8 @@ export const httpAdapter = <
           return result.docs;
         },
         findOne: async (data): Promise<any> => {
+          const parsedWhere = parseWhere(data.where);
+
           if (data.where?.every((w) => w.connector === 'OR')) {
             for (const w of data.where) {
               const result: any = await ctx.runQuery(authFunctions.findOne, {
@@ -347,7 +349,7 @@ export const httpAdapter = <
 
           return await ctx.runQuery(authFunctions.findOne, {
             ...data,
-            where: parseWhere(data.where),
+            where: parsedWhere,
           });
         },
         update: async (data): Promise<any> => {
@@ -368,7 +370,7 @@ export const httpAdapter = <
                   )) as FunctionHandle<'mutation'>)
                 : undefined;
 
-            return ctx.runMutation(authFunctions.updateOne, {
+            return await ctx.runMutation(authFunctions.updateOne, {
               beforeUpdateHandle,
               input: {
                 model: data.model as any,
@@ -505,7 +507,7 @@ export const dbAdapter = <
                 )) as FunctionHandle<'mutation'>)
               : undefined;
 
-          return createHandler(
+          return await createHandler(
             ctx,
             {
               beforeCreateHandle,
@@ -680,7 +682,7 @@ export const dbAdapter = <
                   )) as FunctionHandle<'mutation'>)
                 : undefined;
 
-            return updateOneHandler(
+            return await updateOneHandler(
               ctx,
               {
                 beforeUpdateHandle,
