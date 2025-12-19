@@ -1,5 +1,13 @@
 # better-auth-convex
 
+## 0.5.1
+
+### Patch Changes
+
+- [`458a46a`](https://github.com/udecode/better-auth-convex/commit/458a46a4b45fd2481a548cb5ebb8b407e05adc4b) Thanks [@zbeyens](https://github.com/zbeyens)! - - Updated `better-auth` dependency
+  - Changed `getLatestJwks` from mutation to internal action
+  - Fixed external dependencies
+
 ## 0.5.0
 
 ### Minor Changes
