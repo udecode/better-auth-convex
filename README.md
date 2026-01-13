@@ -1,3 +1,7 @@
+> **This repository has been archived and moved to https://github.com/udecode/better-convex**
+>
+> See the documentation at [www.better-convex.com/docs/auth](https://www.better-convex.com/docs/auth)
+
 # Better Auth Convex
 
 Local installation of Better Auth directly in your Convex app schema, with direct database access instead of component-based queries.
